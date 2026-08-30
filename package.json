@@ -1,8 +1,8 @@
 {
-  "name": "speedtype",
+  "name": "aswin-typing-monitor",
   "version": "1.0.0",
   "private": true,
-  "description": "Aswin Typing Monitor",
+  "description": "Typing accuracy and practice monitor with optional Telegram notifications.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
