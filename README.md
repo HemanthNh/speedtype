@@ -339,3 +339,7 @@ The test suite covers:
 ## v5.9 Test Mode
 
 Use the **Test mode** toggle when validating the app on another laptop or browser. Test Mode runs the editor, timer, WPM, accuracy, score, heatmap and result recap normally, but intentionally does **not** update Aswin's mastery, session history, last activity, streak, daily/weekly targets, server `sessions.json`, synchronization queue, or Telegram notifications. The backend also rejects Test Mode persistence as a second safety layer.
+
+## v6.2 editor scroll behavior
+
+Reference Code and Your Code now scroll independently. Scrolling one editor never moves the other. Each editor still keeps its own line-number gutter aligned with its own scroll position.

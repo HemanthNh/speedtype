@@ -1131,12 +1131,8 @@ function syncReferenceGutter() {
   if (referenceLineNumbers) referenceLineNumbers.style.transform = `translateY(-${Number(promptEl.scrollTop || 0)}px)`;
 }
 
-function syncEditorScroll() {
-  if (!box || !promptEl) return;
-  promptEl.scrollTop = box.scrollTop || 0;
-  promptEl.scrollLeft = box.scrollLeft || 0;
+function syncTypingGutter() {
   if (typingLineNumbers) typingLineNumbers.style.transform = `translateY(-${Number(box.scrollTop || 0)}px)`;
-  syncReferenceGutter();
 }
 
 function updateEditorMatch(stats) {
@@ -1173,10 +1169,8 @@ function handleTypingChange() {
   const stats = active && !finishing ? compute() : first;
   updateEditorMatch(stats);
   updateEditorChrome();
-  // Do not force reference scrolling on every keystroke. The typing textarea
-  // can transiently report scrollTop=0 during input/layout updates in some
-  // browsers, which would pull the reference pane back to the top. Genuine
-  // scroll events from the typing pane remain the source of scroll sync.
+  // Reference and typing editors intentionally scroll independently.
+  // Each editor only keeps its own line-number gutter aligned.
 }
 
 function applyEditorTab(event) {
@@ -1219,7 +1213,7 @@ function cycleEditorLayout() {
   const next = current === "auto" ? "stacked" : current === "stacked" ? "side" : "auto";
   applyEditorLayout(next);
   if (!isTestModeEnabled()) saveProgressState();
-  window.requestAnimationFrame?.(() => syncEditorScroll());
+  window.requestAnimationFrame?.(() => { syncReferenceGutter(); syncTypingGutter(); });
 }
 
 function toggleEditorFocus(force) {
@@ -1230,7 +1224,7 @@ function toggleEditorFocus(force) {
   body.classList.toggle("editor-focus-active", shouldFocus);
   if (focusEditorBtn) focusEditorBtn.textContent = shouldFocus ? "Exit focus" : "Focus editor";
   if (shouldFocus && !box.disabled) box.focus();
-  setTimeout(() => syncEditorScroll(), 0);
+  setTimeout(() => { syncReferenceGutter(); syncTypingGutter(); }, 0);
 }
 
 function showRandomTip() {
@@ -1589,7 +1583,8 @@ async function startSession() {
   box.focus();
   updateEditorChrome();
   updateEditorMatch();
-  syncEditorScroll();
+  syncReferenceGutter();
+  syncTypingGutter();
   $("pasteStatus").textContent = "Paste blocked: 0 attempts";
   $("ruleBox").className = "rule";
   $("ruleBox").textContent = testRun
@@ -1797,7 +1792,8 @@ function reset() {
   $("learningFocus").textContent = "Choose a testing domain and level. Each exercise includes a best-practice learning focus.";
   updateEditorChrome();
   updateEditorMatch();
-  syncEditorScroll();
+  syncReferenceGutter();
+  syncTypingGutter();
   wpmEl.textContent = "0";
   accEl.textContent = "100%";
   accEl.className = "";
@@ -1866,7 +1862,7 @@ box.addEventListener("input", handleTypingChange);
 box.addEventListener("keyup", updateEditorChrome);
 box.addEventListener("click", updateEditorChrome);
 box.addEventListener("select", updateEditorChrome);
-box.addEventListener("scroll", syncEditorScroll);
+box.addEventListener("scroll", syncTypingGutter);
 promptEl.addEventListener("scroll", syncReferenceGutter);
 
 startBtn.addEventListener("click", () => startSession().catch(() => {

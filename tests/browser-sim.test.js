@@ -292,7 +292,7 @@ test('editor layout preference cycles and focus mode can be entered and exited',
 });
 
 
-test('typing does not pull a manually positioned reference pane back to the top', async () => {
+test('reference and typing editors scroll independently', async () => {
   const app = makeAppContext(new Map());
   await settle();
   await vm.runInContext('startSession()', app.context);
@@ -309,14 +309,20 @@ test('typing does not pull a manually positioned reference pane back to the top'
   box.selectionEnd = 1;
   box.dispatchEvent({ type: 'input' });
 
-  assert.equal(reference.scrollTop, 140, 'ordinary typing must preserve reference vertical scroll');
-  assert.equal(reference.scrollLeft, 32, 'ordinary typing must preserve reference horizontal scroll');
+  assert.equal(reference.scrollTop, 140, 'typing must preserve reference vertical scroll');
+  assert.equal(reference.scrollLeft, 32, 'typing must preserve reference horizontal scroll');
 
   box.scrollTop = 88;
   box.scrollLeft = 16;
   box.dispatchEvent({ type: 'scroll' });
-  assert.equal(reference.scrollTop, 88, 'actual typing-pane scrolling should still synchronize vertically');
-  assert.equal(reference.scrollLeft, 16, 'actual typing-pane scrolling should still synchronize horizontally');
+  assert.equal(reference.scrollTop, 140, 'typing-pane scrolling must not change reference vertical scroll');
+  assert.equal(reference.scrollLeft, 32, 'typing-pane scrolling must not change reference horizontal scroll');
+
+  reference.scrollTop = 210;
+  reference.scrollLeft = 44;
+  reference.dispatchEvent({ type: 'scroll' });
+  assert.equal(box.scrollTop, 88, 'reference scrolling must not change typing vertical scroll');
+  assert.equal(box.scrollLeft, 16, 'reference scrolling must not change typing horizontal scroll');
 
   vm.runInContext('reset()', app.context);
 });

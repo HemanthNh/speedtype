@@ -1,6 +1,6 @@
 {
   "name": "aswin-typing-monitor",
-  "version": "6.1.0",
+  "version": "6.2.0",
   "private": true,
   "description": "Testing-focused typing monitor with minimal visual analytics, ranked color-coded mistake analysis, viewport-fit code editors, progression, Telegram coaching reports and resilient local persistence",
   "main": "server.js",
