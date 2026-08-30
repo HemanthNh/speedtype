@@ -602,11 +602,200 @@ function renderMiniChart(elementId, values, kind) {
   }).join("");
 }
 
+function formatShortDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function buildDeltaText(values, suffix = "") {
+  if (!values.length) return "No data";
+  const latest = Number(values.at(-1) || 0);
+  if (values.length < 2) return `${Math.round(latest * 10) / 10}${suffix} baseline`;
+  const previous = Number(values.at(-2) || 0);
+  const delta = Math.round((latest - previous) * 10) / 10;
+  const sign = delta > 0 ? "+" : "";
+  return `${Math.round(latest * 10) / 10}${suffix} (${sign}${delta}${suffix})`;
+}
+
+function renderSvgLineChart(elementId, points, options = {}) {
+  const el = $(elementId);
+  if (!el) return;
+  if (!points.length) {
+    el.textContent = "No data yet.";
+    return;
+  }
+
+  const width = 560;
+  const height = 230;
+  const pad = { top: 14, right: 16, bottom: 30, left: 38 };
+  const values = points.map(point => Number(point.value || 0));
+  const rawMin = Math.min(...values);
+  const rawMax = Math.max(...values);
+  let minY = options.minY != null ? options.minY : 0;
+  let maxY = options.maxY != null ? options.maxY : rawMax;
+
+  if (options.tightRange) {
+    minY = Math.floor((rawMin - (options.paddingY || 2)) / (options.step || 1)) * (options.step || 1);
+    maxY = Math.ceil((rawMax + (options.paddingY || 2)) / (options.step || 1)) * (options.step || 1);
+  }
+  if (options.targetLine != null) {
+    minY = Math.min(minY, Number(options.targetLine));
+    maxY = Math.max(maxY, Number(options.targetLine));
+  }
+  if (maxY === minY) maxY = minY + 1;
+
+  const plotW = width - pad.left - pad.right;
+  const plotH = height - pad.top - pad.bottom;
+  const xFor = index => pad.left + (points.length === 1 ? plotW / 2 : (index / (points.length - 1)) * plotW);
+  const yFor = value => pad.top + (1 - ((Number(value) - minY) / (maxY - minY))) * plotH;
+  const line = points.map((point, index) => `${index === 0 ? "M" : "L"}${xFor(index).toFixed(1)} ${yFor(point.value).toFixed(1)}`).join(" ");
+  const area = `${line} L ${xFor(points.length - 1).toFixed(1)} ${(pad.top + plotH).toFixed(1)} L ${xFor(0).toFixed(1)} ${(pad.top + plotH).toFixed(1)} Z`;
+  const ticks = 4;
+  const grid = [];
+  for (let i = 0; i <= ticks; i += 1) {
+    const value = minY + ((maxY - minY) / ticks) * i;
+    const y = yFor(value);
+    grid.push(`<line x1="${pad.left}" y1="${y.toFixed(1)}" x2="${width - pad.right}" y2="${y.toFixed(1)}" class="chart-grid-line" />`);
+    grid.push(`<text x="${pad.left - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end" class="chart-axis-label">${Math.round(value)}</text>`);
+  }
+
+  const labelIndexes = [...new Set([0, Math.floor((points.length - 1) / 2), points.length - 1])];
+  const xLabels = labelIndexes.map(index => `<text x="${xFor(index).toFixed(1)}" y="${height - 8}" text-anchor="middle" class="chart-axis-label">${escapeHtml(points[index].labelShort || points[index].label || String(index + 1))}</text>`).join("");
+  const dots = points.map((point, index) => {
+    const x = xFor(index).toFixed(1);
+    const y = yFor(point.value).toFixed(1);
+    const title = `${point.label || point.labelShort || index + 1}: ${Number(point.value).toFixed(options.decimals ?? 1)}${options.unit || ""}`;
+    return `<g><circle cx="${x}" cy="${y}" r="4" class="chart-dot" /><title>${escapeHtml(title)}</title></g>`;
+  }).join("");
+  const targetLine = options.targetLine == null ? "" : `<line x1="${pad.left}" y1="${yFor(options.targetLine).toFixed(1)}" x2="${width - pad.right}" y2="${yFor(options.targetLine).toFixed(1)}" class="chart-target-line" /><text x="${width - pad.right}" y="${(yFor(options.targetLine) - 6).toFixed(1)}" text-anchor="end" class="chart-target-label">Target ${options.targetLine}${options.unit || ""}</text>`;
+
+  el.innerHTML = `<svg viewBox="0 0 ${width} ${height}" class="chart-svg" role="img" aria-label="${escapeHtml(options.ariaLabel || 'Line chart')}">${grid.join("")}${targetLine}<path d="${area}" class="chart-area" /><path d="${line}" class="chart-line" />${dots}${xLabels}</svg>`;
+}
+
+function renderSvgBarChart(elementId, points, options = {}) {
+  const el = $(elementId);
+  if (!el) return;
+  if (!points.length) {
+    el.textContent = "No data yet.";
+    return;
+  }
+  const width = 560;
+  const height = 230;
+  const pad = { top: 14, right: 16, bottom: 34, left: 38 };
+  const values = points.map(point => Number(point.value || 0));
+  const maxY = Math.max(options.maxY || 0, ...values, 1);
+  const plotW = width - pad.left - pad.right;
+  const plotH = height - pad.top - pad.bottom;
+  const step = plotW / points.length;
+  const barW = Math.min(42, step * 0.62);
+  const yFor = value => pad.top + (1 - (Number(value) / maxY)) * plotH;
+  const ticks = 4;
+  const grid = [];
+  for (let i = 0; i <= ticks; i += 1) {
+    const value = (maxY / ticks) * i;
+    const y = yFor(value);
+    grid.push(`<line x1="${pad.left}" y1="${y.toFixed(1)}" x2="${width - pad.right}" y2="${y.toFixed(1)}" class="chart-grid-line" />`);
+    grid.push(`<text x="${pad.left - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end" class="chart-axis-label">${Math.round(value)}</text>`);
+  }
+  const bars = points.map((point, index) => {
+    const x = pad.left + step * index + (step - barW) / 2;
+    const y = yFor(point.value);
+    const h = pad.top + plotH - y;
+    const title = `${point.label}: ${Number(point.value || 0)}${options.unit || ""}`;
+    return `<g><rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(4, h).toFixed(1)}" rx="8" class="chart-bar" /><text x="${(x + barW / 2).toFixed(1)}" y="${height - 8}" text-anchor="middle" class="chart-axis-label">${escapeHtml(point.short || point.label)}</text><title>${escapeHtml(title)}</title></g>`;
+  }).join("");
+
+  el.innerHTML = `<svg viewBox="0 0 ${width} ${height}" class="chart-svg" role="img" aria-label="${escapeHtml(options.ariaLabel || 'Bar chart')}">${grid.join("")}${bars}</svg>`;
+}
+
+function renderDomainProgressChart() {
+  const el = $("domainProgressChart");
+  if (!el) return;
+  const summary = core.progressSummary(drills, progressState.exercises);
+  const domains = summary.domains;
+  if (!domains.length) {
+    el.textContent = "No data yet.";
+    return;
+  }
+  const avgPercent = domains.length ? Math.round(domains.reduce((sum, domain) => sum + Number(domain.percent || 0), 0) / domains.length) : 0;
+  if ($("domainHighlight")) $("domainHighlight").textContent = `${summary.corePercent}% core`;
+  el.innerHTML = `<div class="domain-chart-list">${domains.map(domain => `
+    <div class="domain-chart-row">
+      <div class="domain-chart-labels"><strong>${escapeHtml(domain.mode)}</strong><span>${domain.mastered}/${domain.total}</span></div>
+      <div class="domain-chart-track"><span class="domain-chart-fill${core.CORE_MODES.includes(domain.mode) ? ' core' : ''}" style="width:${domain.percent}%"></span></div>
+      <div class="domain-chart-percent">${domain.complete ? 'Complete' : `${domain.percent}%`}</div>
+    </div>`).join("")}</div>`;
+}
+
+function renderMainInsights() {
+  const rows = mergeSessions();
+  const completed = rows
+    .filter(s => s.completedAt && s.completionStatus !== "INTERRUPTED" && Number(s.exerciseBlocksCompleted || 0) > 0)
+    .sort((a, b) => new Date(a.startedAt) - new Date(b.startedAt));
+  const recent = completed.slice(-12);
+
+  const accuracyPoints = recent.map(s => ({
+    value: Number(s.accuracy || 0),
+    label: `${s.mode} ${new Date(s.startedAt).toLocaleString()}`,
+    labelShort: formatShortDate(s.startedAt)
+  }));
+  const validWpmSessions = completed.filter(s => Number(s.accuracy || 0) >= Number(s.targetAccuracy || targetAccuracy));
+  const recentWpm = validWpmSessions.slice(-12);
+  const wpmPoints = recentWpm.map(s => ({
+    value: Number(s.wpm || 0),
+    label: `${s.mode} ${new Date(s.startedAt).toLocaleString()}`,
+    labelShort: formatShortDate(s.startedAt)
+  }));
+
+  if ($("accuracyHighlight")) $("accuracyHighlight").textContent = buildDeltaText(accuracyPoints.map(p => p.value), "%");
+  if ($("wpmHighlight")) $("wpmHighlight").textContent = buildDeltaText(wpmPoints.map(p => p.value), " WPM");
+
+  renderSvgLineChart("accuracyTrendMain", accuracyPoints, {
+    maxY: 100,
+    minY: Math.max(0, Math.floor((Math.min(...accuracyPoints.map(p => p.value), targetAccuracy) - 4) / 5) * 5),
+    targetLine: targetAccuracy,
+    unit: "%",
+    decimals: 1,
+    ariaLabel: "Accuracy trend for recent sessions"
+  });
+  renderSvgLineChart("wpmTrendMain", wpmPoints, {
+    minY: 0,
+    tightRange: true,
+    paddingY: 3,
+    step: 1,
+    unit: " WPM",
+    decimals: 0,
+    ariaLabel: "Valid WPM trend for recent sessions"
+  });
+
+  const days = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  for (let offset = 6; offset >= 0; offset -= 1) {
+    const day = new Date(today);
+    day.setDate(today.getDate() - offset);
+    const next = new Date(day);
+    next.setDate(day.getDate() + 1);
+    const daySessions = rows.filter(s => s.completedAt && new Date(s.startedAt) >= day && new Date(s.startedAt) < next);
+    const minutes = Math.round(daySessions.reduce((sum, session) => sum + Number(session.durationSeconds || 0), 0) / 60);
+    days.push({ label: formatShortDate(day), short: day.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 1), value: minutes });
+  }
+  if ($("weeklyHighlight")) $("weeklyHighlight").textContent = `${days.reduce((sum, item) => sum + item.value, 0)} min total`;
+  renderSvgBarChart("weeklyActivityChart", days, {
+    unit: " min",
+    ariaLabel: "Practice minutes over the last seven days"
+  });
+
+  renderDomainProgressChart();
+}
+
 function renderTrendsAndMetrics() {
   const completed = mergeSessions().filter(s => s.completedAt && s.completionStatus !== "INTERRUPTED" && Number(s.exerciseBlocksCompleted || 0) > 0).sort((a, b) => new Date(a.startedAt) - new Date(b.startedAt));
   const recent = completed.slice(-12);
   renderMiniChart("accuracyTrend", recent.map((s, i) => ({ value: Number(s.accuracy || 0), label: `${s.mode} ${new Date(s.startedAt).toLocaleString()}`, short: String(i + 1) })), "accuracy");
-  renderMiniChart("wpmTrend", recent.map((s, i) => ({ value: Number(s.wpm || 0), label: `${s.mode} ${new Date(s.startedAt).toLocaleString()}`, short: String(i + 1) })), "wpm");
+  const validWpmRecent = completed.filter(s => Number(s.accuracy || 0) >= Number(s.targetAccuracy || targetAccuracy)).slice(-12);
+  renderMiniChart("wpmTrend", validWpmRecent.map((s, i) => ({ value: Number(s.wpm || 0), label: `${s.mode} ${new Date(s.startedAt).toLocaleString()}`, short: String(i + 1) })), "wpm");
 
   const rows = Object.keys(drills).map(modeName => {
     const domainSessions = completed.filter(s => s.mode === modeName);
@@ -624,7 +813,12 @@ function renderTrendsAndMetrics() {
     };
   });
 
-  $("technologyMetrics").innerHTML = `<table><thead><tr><th>Domain</th><th>Mastered</th><th>Sessions</th><th>Avg accuracy</th><th>Best accuracy</th><th>Avg valid WPM</th><th>Best valid WPM</th></tr></thead><tbody>${rows.map(r => `<tr><td>${escapeHtml(r.mode)}</td><td>${r.mastered}</td><td>${r.sessions}</td><td>${r.sessions ? r.avgAccuracy.toFixed(1) + "%" : "-"}</td><td>${r.sessions ? r.bestAccuracy.toFixed(1) + "%" : "-"}</td><td>${r.avgWpm ? Math.round(r.avgWpm) : "-"}</td><td>${r.bestWpm || "-"}</td></tr>`).join("")}</tbody></table>`;
+  const metricsEl = $("technologyMetrics");
+  if (metricsEl) {
+    metricsEl.innerHTML = `<table><thead><tr><th>Domain</th><th>Mastered</th><th>Sessions</th><th>Avg accuracy</th><th>Best accuracy</th><th>Avg valid WPM</th><th>Best valid WPM</th></tr></thead><tbody>${rows.map(r => `<tr><td>${escapeHtml(r.mode)}</td><td>${r.mastered}</td><td>${r.sessions}</td><td>${r.sessions ? r.avgAccuracy.toFixed(1) + "%" : "-"}</td><td>${r.sessions ? r.bestAccuracy.toFixed(1) + "%" : "-"}</td><td>${r.avgWpm ? Math.round(r.avgWpm) : "-"}</td><td>${r.bestWpm || "-"}</td></tr>`).join("")}</tbody></table>`;
+  }
+
+  renderMainInsights();
 }
 
 function renderDiagnostics() {

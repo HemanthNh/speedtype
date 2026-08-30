@@ -191,7 +191,7 @@
     </div>
   </section>
 
-  <section class="motivation-grid">
+    <section class="motivation-grid compact-motivation">
     <div class="card tip-card">
       <div class="mini-label">Typing tip</div>
       <div id="typingTip" class="typing-tip">Keep your right hand relaxed and return to J K L ; after difficult reaches.</div>
@@ -202,80 +202,145 @@
     </div>
   </section>
 
-  <section class="card">
-    <div class="section-head"><div><h2>This week</h2><p>Rolling seven-day practice summary, including quality and speed movement.</p></div></div>
-    <div class="weekly-grid">
-      <div><span>Practice time</span><strong id="weekPracticeTime">0 min</strong></div>
-      <div><span>Sessions</span><strong id="weekSessions">0</strong></div>
-      <div><span>Exercises mastered</span><strong id="weekMastered">0</strong></div>
-      <div><span>Average accuracy</span><strong id="weekAccuracy">0%</strong></div>
-      <div><span>Valid WPM change</span><strong id="weekWpmChange">-</strong></div>
+  <section class="card insights-card">
+    <div class="section-head">
+      <div>
+        <h2>Performance insights</h2>
+        <p>Focused charts for improvement, consistency and training direction.</p>
+      </div>
+    </div>
+    <div class="insight-grid">
+      <section class="chart-card">
+        <div class="chart-card-head">
+          <div>
+            <div class="mini-label">Accuracy trend</div>
+            <h3>Accuracy over recent sessions</h3>
+          </div>
+          <div class="chart-highlight" id="accuracyHighlight">No data</div>
+        </div>
+        <div id="accuracyTrendMain" class="chart-surface">No data yet.</div>
+      </section>
+
+      <section class="chart-card">
+        <div class="chart-card-head">
+          <div>
+            <div class="mini-label">Valid WPM trend</div>
+            <h3>Speed only for accuracy-valid runs</h3>
+          </div>
+          <div class="chart-highlight" id="wpmHighlight">No data</div>
+        </div>
+        <div id="wpmTrendMain" class="chart-surface">No data yet.</div>
+      </section>
+
+      <section class="chart-card">
+        <div class="chart-card-head">
+          <div>
+            <div class="mini-label">Weekly activity</div>
+            <h3>Practice minutes in the last 7 days</h3>
+          </div>
+          <div class="chart-highlight" id="weeklyHighlight">0 min</div>
+        </div>
+        <div id="weeklyActivityChart" class="chart-surface">No data yet.</div>
+      </section>
+
+      <section class="chart-card">
+        <div class="chart-card-head">
+          <div>
+            <div class="mini-label">Domain mastery</div>
+            <h3>Progress across practice modes</h3>
+          </div>
+          <div class="chart-highlight" id="domainHighlight">0%</div>
+        </div>
+        <div id="domainProgressChart" class="chart-surface">No data yet.</div>
+      </section>
     </div>
   </section>
 
-  <section class="card">
-    <div class="section-head"><div><h2>Domain progress</h2><p>Core technologies are separated from reinforcement modes so overall technical readiness stays meaningful.</p></div></div>
-    <div id="domainProgress" class="domain-grid"></div>
-  </section>
+  <details class="card advanced-panel" id="advancedPanel">
+    <summary>
+      <div>
+        <h2>Advanced analysis</h2>
+        <p>Detailed metrics, diagnostics and history for deeper review.</p>
+      </div>
+      <span class="advanced-toggle-hint">Expand</span>
+    </summary>
 
-  <section class="two-column">
-    <section class="card">
-      <div class="section-head"><div><h2>Repeat queue</h2><p>Attempted exercises that have not yet met the accuracy gate.</p></div></div>
-      <div id="repeatQueue" class="compact-list">No exercises need repeating.</div>
+    <section class="card inner-card">
+      <div class="section-head"><div><h2>This week</h2><p>Rolling seven-day practice summary, including quality and speed movement.</p></div></div>
+      <div class="weekly-grid">
+        <div><span>Practice time</span><strong id="weekPracticeTime">0 min</strong></div>
+        <div><span>Sessions</span><strong id="weekSessions">0</strong></div>
+        <div><span>Exercises mastered</span><strong id="weekMastered">0</strong></div>
+        <div><span>Average accuracy</span><strong id="weekAccuracy">0%</strong></div>
+        <div><span>Valid WPM change</span><strong id="weekWpmChange">-</strong></div>
+      </div>
     </section>
-    <section class="card">
-      <div class="section-head"><div><h2>Recently mastered</h2><p>Your latest successfully completed technical patterns.</p></div></div>
-      <div id="recentMastered" class="compact-list">No mastered exercises yet.</div>
+
+    <section class="card inner-card">
+      <div class="section-head"><div><h2>Domain progress</h2><p>Core technologies are separated from reinforcement modes so overall technical readiness stays meaningful.</p></div></div>
+      <div id="domainProgress" class="domain-grid"></div>
     </section>
-  </section>
 
-  <section class="card">
-    <div class="section-head"><div><h2>Weak-area recommendation</h2><p>Uses repeat history, attempts, accuracy and key errors to point to the most useful next focus.</p></div></div>
-    <div id="weakRecommendation" class="recommendation-box">Complete a few sessions to generate a recommendation.</div>
-  </section>
-
-  <section class="card">
-    <div class="section-head"><div><h2>Performance trends</h2><p>Last 12 completed sessions. WPM uses the standard five-characters-per-word formula.</p></div></div>
-    <div class="trend-grid">
-      <div><div class="mini-label">Accuracy trend</div><div id="accuracyTrend" class="mini-chart"></div></div>
-      <div><div class="mini-label">WPM trend</div><div id="wpmTrend" class="mini-chart"></div></div>
-    </div>
-    <div id="technologyMetrics" class="history"></div>
-  </section>
-
-  <section class="two-column">
-    <section class="card">
-      <div class="section-head"><div><h2>Mistake heatmap</h2><p>Most frequently mistyped expected keys across saved sessions.</p></div></div>
-      <div id="mistakeHeatmap" class="heatmap">No key-error data yet.</div>
+    <section class="two-column inner-grid">
+      <section class="card inner-card">
+        <div class="section-head"><div><h2>Repeat queue</h2><p>Attempted exercises that have not yet met the accuracy gate.</p></div></div>
+        <div id="repeatQueue" class="compact-list">No exercises need repeating.</div>
+      </section>
+      <section class="card inner-card">
+        <div class="section-head"><div><h2>Recently mastered</h2><p>Your latest successfully completed technical patterns.</p></div></div>
+        <div id="recentMastered" class="compact-list">No mastered exercises yet.</div>
+      </section>
     </section>
-    <section class="card">
-      <div class="section-head"><div><h2>Hand and symbol trend</h2><p>Tracks right-hand errors, left-hand errors and technical punctuation accuracy.</p></div></div>
-      <div id="handSymbolTrend" class="compact-list">No diagnostic history yet.</div>
+
+    <section class="card inner-card">
+      <div class="section-head"><div><h2>Weak-area recommendation</h2><p>Uses repeat history, attempts, accuracy and key errors to point to the most useful next focus.</p></div></div>
+      <div id="weakRecommendation" class="recommendation-box">Complete a few sessions to generate a recommendation.</div>
     </section>
-  </section>
 
-  <section class="card">
-    <div class="section-head"><div><h2>Milestones</h2><p>Completion markers based on actual mastered exercises and accuracy-valid work.</p></div></div>
-    <div id="milestones" class="achievement-wrap">Start practising to unlock milestones.</div>
-  </section>
+    <section class="card inner-card">
+      <div class="section-head"><div><h2>Performance trends</h2><p>Detailed numeric charts and domain metrics for deeper analysis.</p></div></div>
+      <div class="trend-grid advanced-trend-grid">
+        <div><div class="mini-label">Accuracy trend</div><div id="accuracyTrend" class="mini-chart"></div></div>
+        <div><div class="mini-label">WPM trend</div><div id="wpmTrend" class="mini-chart"></div></div>
+      </div>
+      <div id="technologyMetrics" class="history"></div>
+    </section>
 
-  <section class="card">
-    <div class="section-head"><div><h2>Learning progress</h2><p>Every mode and level, including attempts and completion status.</p></div></div>
-    <div id="progressOverview" class="history">Loading progress...</div>
-  </section>
+    <section class="two-column inner-grid">
+      <section class="card inner-card">
+        <div class="section-head"><div><h2>Mistake heatmap</h2><p>Most frequently mistyped expected keys across saved sessions.</p></div></div>
+        <div id="mistakeHeatmap" class="heatmap">No key-error data yet.</div>
+      </section>
+      <section class="card inner-card">
+        <div class="section-head"><div><h2>Hand and symbol trend</h2><p>Tracks right-hand errors, left-hand errors and technical punctuation accuracy.</p></div></div>
+        <div id="handSymbolTrend" class="compact-list">No diagnostic history yet.</div>
+      </section>
+    </section>
 
-  <section class="card">
-    <div class="section-head"><div><h2>Achievements</h2><p>Progress markers based on actual typing quality.</p></div></div>
-    <div id="achievements" class="achievement-wrap">Complete sessions to unlock achievements.</div>
-  </section>
+    <section class="card inner-card">
+      <div class="section-head"><div><h2>Milestones</h2><p>Completion markers based on actual mastered exercises and accuracy-valid work.</p></div></div>
+      <div id="milestones" class="achievement-wrap">Start practising to unlock milestones.</div>
+    </section>
 
-  <section class="card">
-    <div class="section-head"><div><h2>Recent sessions</h2><p>Scores and completion status remain available in this browser even if the Render filesystem resets.</p></div></div>
-    <div id="history" class="history">No sessions yet.</div>
-  </section>
+    <section class="card inner-card">
+      <div class="section-head"><div><h2>Learning progress</h2><p>Every mode and level, including attempts and completion status.</p></div></div>
+      <div id="progressOverview" class="history">Loading progress...</div>
+    </section>
+
+    <section class="card inner-card">
+      <div class="section-head"><div><h2>Achievements</h2><p>Progress markers based on actual typing quality.</p></div></div>
+      <div id="achievements" class="achievement-wrap">Complete sessions to unlock achievements.</div>
+    </section>
+
+    <section class="card inner-card">
+      <div class="section-head"><div><h2>Recent sessions</h2><p>Scores and completion status remain available in this browser even if the Render filesystem resets.</p></div></div>
+      <div id="history" class="history">No sessions yet.</div>
+    </section>
+  </details>
 </main>
 <script src="exercise-bank.js"></script>
 <script src="core.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
+
