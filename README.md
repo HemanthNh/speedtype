@@ -1,53 +1,193 @@
-# Aswin Typing Monitor v5, Testing Edition
+# Aswin Typing Monitor v5.3
 
-A testing-focused typing practice app designed to improve technical typing accuracy while reinforcing good automation-testing habits.
+A testing-focused typing practice app for learning good automation-testing patterns while improving technical typing accuracy and speed.
 
-## What changed in v5
+## Practice bank
 
-- All generic prose and unrelated programming drills were removed from the active exercise bank.
-- The exercise bank now focuses only on:
-  - Python automation and pytest
-  - Selenium WebDriver
-  - JMeter, JSR223/Groovy, correlation and CLI execution
-  - Postman and Newman
-  - Mixed testing workflows
-  - Right-hand QA-focused drills using real testing syntax
-- 144 curated testing exercises are included.
-- Every exercise has an ID and a visible Learning Focus that explains the best-practice pattern being typed.
-- Exercises rotate continuously during a timed session. Completing one code block automatically appends another, so practice does not stop after a short snippet.
-- Levels are progressive:
-  - Level 1: core patterns and clean syntax
-  - Level 2: reusable testing techniques
-  - Level 3: realistic automation tasks
-  - Level 4: longer competition-style and multi-step patterns
-- Session history records the starting exercise concept and completed code-block count.
-- Right-hand versus left-hand error tracking remains enabled.
-- Paste and drag-and-drop insertion remain blocked.
-- Telegram notifications fail gracefully when credentials are not configured.
+The app contains 144 curated testing exercises, 24 exercises per mode and 6 exercises per level.
 
-## Testing principles reinforced
+Modes:
 
-Exercises intentionally model practices such as:
+- Python Automation
+- Selenium
+- JMeter
+- Postman
+- Mixed Testing
+- Right-Hand QA Focus
 
-- explicit request timeouts
-- pytest fixtures and parameterization
-- environment-based configuration
-- stable Selenium locators
-- explicit waits instead of fixed sleeps
-- Page Object methods
-- failure screenshots
-- JMeter non-GUI execution
-- thread-local JMeter correlation
-- unique test-data generation
-- fail-fast assertions
-- randomized JMeter pacing
-- Postman correlation and schema validation
-- expected negative tests such as HTTP 403
-- Newman machine-readable reports
+Each mode has four progressive levels. Every exercise has a unique ID and a visible learning focus. The content reinforces practices such as pytest fixtures and parameterization, explicit request timeouts, stable Selenium locators, explicit waits, Page Objects, screenshots, JMeter correlation and JSR223/Groovy, randomized pacing, non-GUI JMeter execution, Postman assertions and correlation, Newman reporting, expected negative tests, environment-based configuration and unique test data.
+
+## v5.2+ progress system
+
+The app now behaves as a learning progression system rather than a random typing drill.
+
+### Overall progress
+
+The dashboard shows:
+
+- overall mastery across all 144 exercises
+- core technical mastery across Python Automation, Selenium, JMeter and Postman only, 96 exercises
+- completed levels
+- repeat queue size
+- weekly practice time
+- per-domain progress cards
+- per-level completion indicators
+
+Mixed Testing and Right-Hand QA Focus remain part of overall progress, but do not inflate the core technical-readiness percentage.
+
+### Dropdown status
+
+The Practice Mode dropdown shows one of:
+
+- `COMPLETE`
+- `IN PROGRESS x/24`
+- `NOT STARTED`
+
+The Level dropdown shows one of:
+
+- `COMPLETE`
+- `x/6`
+- `NOT STARTED`
+
+### Mastery and next-step logic
+
+Exercise states are tracked as:
+
+- `NOT STARTED`
+- `IN PROGRESS`
+- `REPEAT`
+- `MASTERED`
+
+A code block counts toward mastery only when the session meets the 97% accuracy gate and at least one full block is completed.
+
+Normal progression does not select mastered exercises again. Failed, interrupted or incomplete work is prioritized before new material. The Continue Recommended button points to the most useful next activity.
+
+Revision Mode can be enabled explicitly when mastered material should be practised again. Revision attempts never remove existing mastery.
+
+### Saved scores and attempts
+
+The browser stores:
+
+- last activity
+- completion status
+- previous session scores
+- WPM and accuracy
+- attempt counts
+- per-exercise attempt history
+- best score
+- best accuracy
+- best valid WPM
+- mastery time
+- recent sessions
+- repeat status
+
+The v5.1 local progress ledger is automatically migrated into v5.2 when present.
+
+## Performance and learning analytics
+
+v5.2 includes:
+
+- accuracy trend for recent scored sessions
+- WPM trend for recent scored sessions
+- technology-specific average accuracy
+- technology-specific best accuracy
+- technology-specific average valid WPM
+- technology-specific best valid WPM
+- weekly practice time
+- weekly session count
+- exercises mastered during the rolling seven-day window
+- weekly average accuracy
+- valid WPM movement during the week
+- mistake heatmap by expected key
+- right-hand versus left-hand error history
+- technical-symbol accuracy
+- weak-area recommendation
+- recently mastered exercises
+- repeat queue
+- milestones and achievements
+- best-practice recap after a session
+- automatic session notes
+
+Interrupted and zero-block attempts remain visible in history and diagnostics, but do not distort headline accuracy or speed trends.
+
+## WPM formula
+
+WPM now uses the standard typing formula, which is more suitable for code than counting whitespace-delimited words:
+
+```text
+WPM = characters typed / 5 / minutes
+```
+
+Best WPM only counts a run when:
+
+- accuracy meets the session accuracy gate, and
+- at least one full code block was completed.
+
+A very fast low-accuracy attempt cannot become the personal best.
+
+## Session completion status
+
+Sessions are stored as one of:
+
+- `PASS`
+- `REPEAT`
+- `INCOMPLETE`
+- `INTERRUPTED`
+
+Resetting or closing an active session records it as interrupted instead of silently losing the activity.
+
+## Reliability and offline behavior
+
+The browser is the primary continuity layer for progress. Session results are saved locally before server synchronization is attempted.
+
+If the server or network is temporarily unavailable:
+
+- the typing session can continue
+- completion is saved in browser localStorage
+- the session is marked for later synchronization
+- the app does not crash
+
+Client-generated UUID session IDs and idempotent server APIs prevent duplicate session creation and duplicate completion updates.
+
+If the Render session file is lost because of an ephemeral filesystem, a browser that still has the local history can restore missing completed sessions back into the server session file without re-sending old Telegram completion notifications.
+
+Important: this improves resilience, but browser localStorage is still not a substitute for a permanent centralized database. If history must survive loss of the browser itself and must be guaranteed across devices, use an external persistent database such as PostgreSQL or Supabase.
+
+## Local storage
+
+Current progress key:
+
+```text
+aswinTypingProgressV3
+```
+
+The browser keeps up to 250 recent session records and a per-exercise progress ledger.
+
+## Telegram coaching reports, v5.3
+
+Telegram credentials are never hardcoded in source code. Telegram failures are handled gracefully and never stop typing practice.
+
+Configure these environment variables:
+
+```text
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+REPORT_TIME_ZONE=Asia/Kolkata
+```
+
+`REPORT_TIME_ZONE` is optional and defaults to `Asia/Kolkata`.
+
+Telegram now sends three notification types:
+
+1. **Session started**, with the selected mode/level/exercise plus current level, domain, core and overall progress.
+2. **Session completed/interrupted**, with a detailed coaching report containing WPM, accuracy, score, errors, completed blocks, level/domain/core/overall progress, newly mastered and repeat-required exercises, technical-symbol accuracy, right-hand/left-hand errors, top mistyped keys, technology-specific performance, personal bests, recent accuracy/WPM trend, daily target, streak, rolling seven-day progress, weak-area guidance, session note and recommended next task.
+3. **Milestone achieved**, sent only when a new milestone, level completion or domain completion is reached.
+
+Telegram reports are clamped below Telegram's message-size limit. Restoring old local sessions to an empty Render filesystem does not re-send historical Telegram notifications. Idempotent completion handling also prevents a retry of the same completed session from generating a duplicate report.
 
 ## Run locally
 
-Requires Node.js 18 to 24.
+Requires Node.js 18 through 24.
 
 ```powershell
 npm install
@@ -60,45 +200,62 @@ Open:
 http://localhost:8080
 ```
 
-## Render
+## Deploy to Render
 
-The project root contains `package.json`, so the following Render settings can be used:
+Use the repository root containing `package.json` and `server.js`.
+
+Render settings:
 
 ```text
 Build Command: npm install
 Start Command: npm start
 ```
 
-The server listens on `process.env.PORT` and `0.0.0.0`.
-
-## Telegram
-
-Do not put Telegram secrets in source code or GitHub.
-
-Configure these environment variables locally or in Render:
+The server listens on:
 
 ```text
-TELEGRAM_BOT_TOKEN
-TELEGRAM_CHAT_ID
+process.env.PORT
+0.0.0.0
 ```
 
-An `.env.example` file is included with variable names only.
+Add the Telegram values under the Render Web Service environment-variable settings. Do not commit actual secrets to GitHub.
 
-## Session data
+## Automated checks
 
-The current build preserves the existing storage design:
+Run:
 
 ```text
-data/sessions.json
+npm run check
+npm test
 ```
 
-This is persistent when the app is run on a normal local machine with a persistent disk.
+The test suite covers:
 
-Important: Render Free web-service filesystems are ephemeral. If this build is deployed to Render Free, `data/sessions.json` must not be treated as permanent storage. To retain centralized history across Render restarts and redeployments, migrate session storage to an external persistent database such as PostgreSQL.
+- Telegram start-progress report content
+- detailed Telegram completion-report content
+- milestone-only notification behavior
+- Telegram message-length clamping
 
-## Scoring
+- JavaScript syntax
+- 144-exercise bank structure and unique IDs
+- five-character WPM calculation
+- accuracy and technical-symbol diagnostics
+- accuracy-valid personal-best WPM
+- core versus overall progress calculation
+- browser-style progression and reload persistence
+- completed-level exclusion from normal practice
+- Revision Mode
+- corrupted localStorage recovery
+- start/reset race handling
+- idempotent session start and completion
+- server-side interrupted-session handling
+- restoration of locally preserved sessions into an empty server session store
+- duplicate HTML IDs
+- DOM ID consistency
+- script loading order
+- Render start configuration
+- Telegram secret handling
 
-- Accuracy contributes up to 70 points.
-- Speed contributes up to 30 points only when accuracy is at least 95%.
-- Default pass gate is 97% accuracy.
-- Completing additional code blocks does not compensate for low accuracy.
+## Render Free storage note
+
+`data/sessions.json` remains a secondary server-side session copy. Render Free filesystems are ephemeral, so this file is not guaranteed permanent. v5.2 protects same-browser continuity through localStorage and can rehydrate an empty server file from that browser's saved history. A persistent external database is still required for guaranteed centralized, cross-device retention.

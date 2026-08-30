@@ -1,12 +1,13 @@
 {
   "name": "aswin-typing-monitor",
-  "version": "5.0.0",
+  "version": "5.3.0",
   "private": true,
-  "description": "Testing-focused typing practice monitor for Python automation, Selenium, JMeter and Postman",
+  "description": "Testing-focused typing practice monitor with progress, mastery, diagnostics, Telegram coaching reports and resilient local persistence",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check public/exercise-bank.js && node --check public/app.js"
+    "check": "node --check server.js && node --check public/exercise-bank.js && node --check public/core.js && node --check public/app.js",
+    "test": "node --test tests/*.test.js"
   },
   "engines": {
     "node": ">=18 <25"
