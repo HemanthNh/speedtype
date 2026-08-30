@@ -1,11 +1,12 @@
 {
   "name": "aswin-typing-monitor",
-  "version": "1.0.0",
+  "version": "5.0.0",
   "private": true,
-  "description": "Typing accuracy and practice monitor with optional Telegram notifications.",
+  "description": "Testing-focused typing practice monitor for Python automation, Selenium, JMeter and Postman",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "check": "node --check server.js && node --check public/exercise-bank.js && node --check public/app.js"
   },
   "engines": {
     "node": ">=18 <25"

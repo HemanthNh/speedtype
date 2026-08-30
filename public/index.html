@@ -13,7 +13,7 @@
     <div>
       <p class="eyebrow">WorldSkills support drill</p>
       <h1>Typing Accuracy Monitor</h1>
-      <p>Accuracy is the gate. Speed matters only after consistent precision.</p>
+      <p>Learn testing best practices while building accurate, competition-ready technical typing speed.</p>
     </div>
     <div class="hero-actions">
       <span class="status" id="notifyStatus">Checking Telegram...</span>
@@ -32,13 +32,12 @@
     <div>
       <label>Practice mode
         <select id="mode">
-          <option value="Accuracy">Accuracy</option>
-          <option value="Right Hand Focus">Right Hand Focus</option>
-          <option value="Right Hand Symbols">Right Hand Symbols</option>
-          <option value="Technical Commands">Technical Commands</option>
-          <option value="Code & JSON">Code & JSON</option>
-          <option value="Mixed Technical">Mixed Technical</option>
-          <option value="Speed">Speed</option>
+          <option value="Python Automation">Python Automation</option>
+          <option value="Selenium">Selenium</option>
+          <option value="JMeter">JMeter</option>
+          <option value="Postman">Postman</option>
+          <option value="Mixed Testing">Mixed Testing</option>
+          <option value="Right-Hand QA Focus">Right-Hand QA Focus</option>
         </select>
       </label>
     </div>
@@ -78,6 +77,9 @@
 
     <div class="prompt-label">Type this exactly</div>
     <div class="prompt" id="prompt">Press Start Practice to begin.</div>
+    <div class="learning-focus" id="learningFocus">
+      Choose a testing domain and level. Each exercise includes a best-practice learning focus.
+    </div>
 
     <textarea id="typingBox" disabled spellcheck="false" autocomplete="off" autocapitalize="off"
       placeholder="Type here exactly as shown above..."></textarea>
@@ -105,7 +107,7 @@
     </div>
     <div class="card challenge-card">
       <div class="mini-label">Today's challenge</div>
-      <div class="challenge-text">Complete one Level 3 or 4 technical drill at 98%+ accuracy with fewer than 3 right-hand errors.</div>
+      <div class="challenge-text">Complete one Level 3 or 4 testing drill at 98%+ accuracy, then explain the best practice used in the code.</div>
     </div>
   </section>
 
@@ -129,6 +131,7 @@
     <div id="history" class="history">No sessions yet.</div>
   </section>
 </main>
+<script src="exercise-bank.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -126,3 +126,20 @@ textarea { margin-top: 12px; width: 100%; min-height: 180px; resize: vertical; f
 @media (max-width: 700px) {
   .motivation-grid { grid-template-columns: 1fr; }
 }
+
+.learning-focus {
+  margin-top: 10px;
+  padding: 11px 13px;
+  border: 1px solid #dfe6ef;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #41516a;
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 700;
+}
+.learning-focus::before {
+  content: "Learning focus: ";
+  color: #172033;
+  font-weight: 850;
+}
