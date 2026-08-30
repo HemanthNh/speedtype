@@ -91,10 +91,12 @@
       </label>
     </div>
     <label class="revision-toggle"><input id="revisionMode" type="checkbox"> Revision mode <span>Include mastered exercises</span></label>
+    <label class="test-toggle"><input id="testMode" type="checkbox"> Test mode <span>Results are not saved or sent</span></label>
     <button id="startBtn">Start Practice</button>
   </section>
 
   <section class="card practice" id="practiceCard">
+    <div id="testModeBanner" class="test-mode-banner hidden">TEST MODE · Results will not be saved, synced, counted, or sent to Telegram.</div>
     <div class="metrics">
       <div><span>Time</span><strong id="time">10:00</strong></div>
       <div><span>WPM</span><strong id="wpm">0</strong></div>

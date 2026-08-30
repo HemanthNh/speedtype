@@ -86,3 +86,12 @@ test('viewport-fit editor keeps both panes on one row for common laptop widths',
   assert.match(css, /@media \(max-width: 1079px\)/);
   assert.match(css, /body\.editor-focus-active \.practice:not\(\.layout-stacked\) \.code-workspace/);
 });
+
+test('Test Mode is visibly available and isolated in the client', () => {
+  assert.match(html, /id="testMode"/);
+  assert.match(html, /id="testModeBanner"/);
+  assert.match(app, /TEST MODE · no data will be saved/);
+  assert.match(app, /if \(session\.testMode\)/);
+  assert.match(app, /if \(!testRun\)/);
+  assert.match(css, /\.test-mode-banner/);
+});

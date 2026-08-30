@@ -320,3 +320,70 @@ test('typing does not pull a manually positioned reference pane back to the top'
 
   vm.runInContext('reset()', app.context);
 });
+
+test('Test Mode runs a full session without changing Aswin progress, history, server data or sync state', async () => {
+  const shared = new Map();
+  const app = makeAppContext(shared);
+  await settle();
+
+  const progressKey = 'aswinTypingProgressV3';
+  const beforeStorage = shared.get(progressKey) || null;
+  const beforeServer = JSON.stringify(app.serverSessions);
+  const beforeMastered = String(app.elements.get('overallMastered').textContent);
+  const beforeHistory = app.elements.get('history').innerHTML;
+
+  app.elements.get('testMode').checked = true;
+  app.elements.get('testMode').dispatchEvent({ type: 'change' });
+  assert.match(app.elements.get('ruleBox').textContent, /TEST MODE enabled/);
+  assert.match(app.elements.get('syncStatus').textContent, /TEST MODE/);
+
+  await vm.runInContext('startSession()', app.context);
+  assert.equal(vm.runInContext('Boolean(active && active.testMode)', app.context), true);
+  assert.equal(app.serverSessions.length, 0, 'Test Mode must not call the server start endpoint');
+
+  vm.runInContext('box.value = promptEl.textContent; box.dispatchEvent({type:"input"});', app.context);
+  assert.equal(vm.runInContext('completedExerciseBlocks', app.context), 1);
+  await vm.runInContext('finishSession("manual")', app.context);
+  await settle();
+
+  assert.equal(shared.get(progressKey) || null, beforeStorage, 'Test Mode must not mutate the saved Aswin progress object');
+  assert.equal(JSON.stringify(app.serverSessions), beforeServer, 'Test Mode must not create server history');
+  assert.equal(String(app.elements.get('overallMastered').textContent), beforeMastered, 'mastery must remain unchanged');
+  assert.equal(app.elements.get('history').innerHTML, beforeHistory, 'history must remain unchanged');
+  assert.match(app.elements.get('sessionNote').textContent, /intentionally discarded/);
+  assert.match(app.elements.get('ruleBox').textContent, /Nothing was saved or sent/);
+});
+
+test('resetting or closing a Test Mode session discards it without recording an interruption', async () => {
+  const shared = new Map();
+  const app = makeAppContext(shared);
+  await settle();
+  const before = shared.get('aswinTypingProgressV3') || null;
+
+  app.elements.get('testMode').checked = true;
+  app.elements.get('testMode').dispatchEvent({ type: 'change' });
+  await vm.runInContext('startSession()', app.context);
+  vm.runInContext('box.value = "partial code";', app.context);
+  vm.runInContext('reset()', app.context);
+
+  assert.equal(shared.get('aswinTypingProgressV3') || null, before);
+  assert.equal(app.serverSessions.length, 0);
+  assert.match(app.elements.get('ruleBox').textContent, /TEST MODE session discarded/);
+});
+
+test('Test Mode can exercise an already-completed level without changing its mastery', async () => {
+  const shared = new Map();
+  const app = makeAppContext(shared);
+  await settle();
+  const ids = vm.runInContext('allDrillsFor("Python Automation", 1).map(d => d.id)', app.context);
+  vm.runInContext(`for (const id of ${JSON.stringify(ids)}) { const d=getDrillById(id); progressState.exercises[id]={id,mode:d.mode,level:d.level,concept:d.concept,status:"mastered",attempts:1,bestScore:100,bestAccuracy:100,bestWpm:40,history:[]}; } saveProgressState(); renderProgressUI();`, app.context);
+  const before = shared.get('aswinTypingProgressV3');
+  assert.match(app.elements.get('level').options[0].textContent, /COMPLETE/);
+
+  app.elements.get('testMode').checked = true;
+  app.elements.get('testMode').dispatchEvent({ type: 'change' });
+  await vm.runInContext('startSession()', app.context);
+  assert.equal(vm.runInContext('Boolean(active && active.testMode)', app.context), true);
+  vm.runInContext('reset()', app.context);
+  assert.equal(shared.get('aswinTypingProgressV3'), before);
+});

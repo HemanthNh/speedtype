@@ -1,6 +1,6 @@
 {
   "name": "aswin-typing-monitor",
-  "version": "5.8.0",
+  "version": "5.9.0",
   "private": true,
   "description": "Testing-focused typing monitor with viewport-fit side-by-side code editors, stable synchronized scrolling, accessible mistake heatmap, progression, Telegram coaching reports and resilient local persistence",
   "main": "server.js",

@@ -146,7 +146,26 @@ test('server supports idempotent start, durable completion API and interruption 
   const syncDuplicate = await post(baseUrl, '/api/sessions/sync', { sessions: sync.data.sessions.filter(s => s.id === 'restored-session') });
   assert.equal(syncDuplicate.data.imported, 0);
 
-  const sessions = await fetch(`${baseUrl}/api/sessions`).then(r => r.json());
+  const beforeTestModeSessions = await fetch(`${baseUrl}/api/sessions`).then(r => r.json());
+  const testStart = await post(baseUrl, '/api/session/start', {
+    id: 'tester-only', trainee: 'Aswin', mode: 'Selenium', level: 1,
+    exerciseId: 'SEL1-01', startedAt: new Date().toISOString(), testMode: true
+  });
+  assert.equal(testStart.r.status, 200);
+  assert.equal(testStart.data.discarded, true);
+
+  const testComplete = await post(baseUrl, '/api/session/complete', {
+    id: 'tester-only', trainee: 'Aswin', mode: 'Selenium', level: 1,
+    exerciseId: 'SEL1-01', startedAt: new Date().toISOString(), completedAt: new Date().toISOString(),
+    wpm: 99, accuracy: 100, exerciseBlocksCompleted: 1, testMode: true
+  });
+  assert.equal(testComplete.r.status, 200);
+  assert.equal(testComplete.data.discarded, true);
+
+  const afterTestModeSessions = await fetch(`${baseUrl}/api/sessions`).then(r => r.json());
+  assert.equal(afterTestModeSessions.length, beforeTestModeSessions.length, 'server must never persist Test Mode sessions');
+
+  const sessions = afterTestModeSessions;
   assert.equal(sessions.length, 3);
   assert.ok(sessions.some(s => s.id === id && s.completionStatus === 'PASS'));
   assert.ok(sessions.some(s => s.id === 'offline-session' && s.completionStatus === 'INTERRUPTED'));

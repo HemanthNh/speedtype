@@ -21,12 +21,14 @@ let completedExerciseBlocks = 0;
 let sessionCompletedExerciseIds = [];
 let finishing = false;
 let cachedServerSessions = [];
+let transientTestEditorLayout = null;
 
 const $ = id => document.getElementById(id);
 const mode = $("mode");
 const level = $("level");
 const durationSel = $("duration");
 const revisionMode = $("revisionMode");
+const testMode = $("testMode");
 const startBtn = $("startBtn");
 const finishBtn = $("finishBtn");
 const resetBtn = $("resetBtn");
@@ -49,8 +51,27 @@ const longLineStatus = $("longLineStatus");
 const practiceCard = $("practiceCard");
 const layoutBtn = $("layoutBtn");
 const focusEditorBtn = $("focusEditorBtn");
+const testModeBanner = $("testModeBanner");
 
 let progressState = loadProgressState();
+
+function isTestModeEnabled() {
+  return Boolean(testMode?.checked);
+}
+
+function updateTestModeUI() {
+  const enabled = isTestModeEnabled();
+  testModeBanner?.classList.toggle("hidden", !enabled);
+  document.body?.classList.toggle("test-mode-active", enabled);
+  if (testMode) testMode.title = enabled
+    ? "Test Mode is isolated: no progress, history, server data, streaks or Telegram reports are changed."
+    : "Enable to test the app without changing Aswin's records.";
+  if (!active) {
+    $("syncStatus").textContent = enabled
+      ? "TEST MODE · no data will be saved"
+      : (pendingSyncCount() ? `${pendingSyncCount()} session(s) pending server sync` : "Progress saved locally");
+  }
+}
 
 function defaultProgressState() {
   return {
@@ -175,7 +196,7 @@ function levelProgress(modeName, levelNumber) {
 function chooseDrill(options = {}) {
   const modeName = options.mode || mode.value;
   const levelNumber = Number(options.level || level.value);
-  const revision = options.revision ?? revisionMode.checked;
+  const revision = options.revision ?? (revisionMode.checked || isTestModeEnabled());
   const arr = allDrillsFor(modeName, levelNumber);
   if (!arr.length) return null;
 
@@ -335,6 +356,7 @@ function applySessionToProgress(session, options = {}) {
   progressState.processedSessionIds = [...processed].slice(-1000);
   saveProgressState();
   renderProgressUI();
+  updateTestModeUI();
 }
 
 function mergeSessions(serverRows = cachedServerSessions) {
@@ -935,10 +957,11 @@ function applyEditorTab(event) {
 }
 
 
-function applyEditorLayout(layout = progressState.settings.editorLayout || "auto") {
+function applyEditorLayout(layout = (isTestModeEnabled() ? transientTestEditorLayout : null) || progressState.settings.editorLayout || "auto") {
   const allowed = new Set(["auto", "stacked", "side"]);
   const next = allowed.has(layout) ? layout : "auto";
-  progressState.settings.editorLayout = next;
+  if (isTestModeEnabled()) transientTestEditorLayout = next;
+  else progressState.settings.editorLayout = next;
   if (practiceCard) {
     practiceCard.classList.remove("layout-stacked", "layout-side");
     if (next === "stacked") practiceCard.classList.add("layout-stacked");
@@ -953,10 +976,10 @@ function applyEditorLayout(layout = progressState.settings.editorLayout || "auto
 }
 
 function cycleEditorLayout() {
-  const current = progressState.settings.editorLayout || "auto";
+  const current = (isTestModeEnabled() ? transientTestEditorLayout : null) || progressState.settings.editorLayout || "auto";
   const next = current === "auto" ? "stacked" : current === "stacked" ? "side" : "auto";
   applyEditorLayout(next);
-  saveProgressState();
+  if (!isTestModeEnabled()) saveProgressState();
   window.requestAnimationFrame?.(() => syncEditorScroll());
 }
 
@@ -1023,6 +1046,7 @@ function setSetupDisabled(disabled) {
   level.disabled = disabled;
   durationSel.disabled = disabled;
   revisionMode.disabled = disabled;
+  if (testMode) testMode.disabled = disabled;
 }
 
 function setTime(seconds) {
@@ -1049,6 +1073,15 @@ function buildSessionNote(stats, session) {
 
 function renderSessionRecap(session) {
   const completed = Array.isArray(session.exerciseIdsCompleted) ? session.exerciseIdsCompleted : [];
+  if (session.testMode) {
+    const concepts = completed.map(id => getDrillById(id)?.concept).filter(Boolean);
+    const current = getDrillById(session.currentExerciseId);
+    if (current && !completed.includes(current.id)) concepts.push(`Current: ${current.id}, ${current.concept}`);
+    $("recapText").textContent = concepts.length ? [...new Set(concepts)].slice(0, 5).join(" ") : "Test run completed.";
+    $("sessionNote").textContent = "TEST MODE: this result was intentionally discarded. Aswin's progress, scores, history, streaks and Telegram reports were not changed.";
+    $("sessionRecap").classList.remove("hidden");
+    return;
+  }
   const concepts = completed.map(id => getDrillById(id)?.concept).filter(Boolean);
   const current = getDrillById(session.currentExerciseId);
   if (current && !completed.includes(current.id)) concepts.push(`Resume ${current.id}: ${current.concept}`);
@@ -1063,8 +1096,8 @@ function extendPromptIfComplete() {
   completedExerciseBlocks++;
   if (activeExercise.id && !sessionCompletedExerciseIds.includes(activeExercise.id)) sessionCompletedExerciseIds.push(activeExercise.id);
 
-  const next = chooseDrill({ excludeIds: sessionCompletedExerciseIds });
-  if (!next && !revisionMode.checked) {
+  const next = chooseDrill({ excludeIds: sessionCompletedExerciseIds, revision: revisionMode.checked || Boolean(active?.testMode) });
+  if (!next && !revisionMode.checked && !active?.testMode) {
     activeExercise = null;
     $("learningFocus").textContent = `All remaining exercises in ${mode.value}, Level ${level.value} are complete for this session.`;
     finishSession("level_complete");
@@ -1076,7 +1109,7 @@ function extendPromptIfComplete() {
   promptEl.textContent += `\n\n${activeExercise.text}`;
   $("learningFocus").textContent = `Block ${exerciseBlockNumber} | ${activeExercise.id} | ${activeExercise.concept}`;
   updateEditorChrome();
-  markExerciseInProgress(activeExercise);
+  if (!active?.testMode) markExerciseInProgress(activeExercise);
   showRandomTip();
 }
 
@@ -1239,7 +1272,8 @@ async function startSession() {
   duration = Number(durationSel.value);
   const preferredExerciseId = startBtn.dataset.preferredExerciseId || "";
   const preferred = preferredExerciseId ? getDrillById(preferredExerciseId) : null;
-  let exercise = preferred && preferred.mode === mode.value && preferred.level === Number(level.value) && (revisionMode.checked || !isMastered(preferred.id)) ? preferred : chooseDrill();
+  const testRun = isTestModeEnabled();
+  let exercise = preferred && preferred.mode === mode.value && preferred.level === Number(level.value) && (testRun || revisionMode.checked || !isMastered(preferred.id)) ? preferred : chooseDrill({ revision: testRun || revisionMode.checked });
   startBtn.dataset.preferredExerciseId = "";
 
   if (!exercise) {
@@ -1279,30 +1313,35 @@ async function startSession() {
     startedAt: new Date(startedAt).toISOString(),
     completedAt: null,
     revisionMode: revisionMode.checked,
+    testMode: testRun,
     completionStatus: "IN_PROGRESS",
     syncStatus: "pending"
   };
 
-  progressState.settings = {
-    mode: mode.value,
-    level: Number(level.value),
-    duration,
-    revisionMode: revisionMode.checked
-  };
-  progressState.lastActivity = {
-    mode: active.mode,
-    level: active.level,
-    exerciseId: active.exerciseId,
-    status: "in_progress",
-    startedAt: active.startedAt,
-    score: null,
-    accuracy: null,
-    wpm: null
-  };
-  markExerciseInProgress(activeExercise);
-  active.telegramStartContext = buildTelegramStartContext(active.mode, active.level);
-  saveProgressState();
-  renderNextUp();
+  if (!testRun) {
+    progressState.settings = {
+      mode: mode.value,
+      level: Number(level.value),
+      duration,
+      revisionMode: revisionMode.checked
+    };
+    progressState.lastActivity = {
+      mode: active.mode,
+      level: active.level,
+      exerciseId: active.exerciseId,
+      status: "in_progress",
+      startedAt: active.startedAt,
+      score: null,
+      accuracy: null,
+      wpm: null
+    };
+    markExerciseInProgress(activeExercise);
+    active.telegramStartContext = buildTelegramStartContext(active.mode, active.level);
+    saveProgressState();
+    renderNextUp();
+  } else {
+    $("syncStatus").textContent = "TEST MODE · no data will be saved";
+  }
   setTime(duration);
   startBtn.disabled = true;
   finishBtn.disabled = false;
@@ -1314,7 +1353,9 @@ async function startSession() {
   syncEditorScroll();
   $("pasteStatus").textContent = "Paste blocked: 0 attempts";
   $("ruleBox").className = "rule";
-  $("ruleBox").textContent = `Session active. Mastery requires ${targetAccuracy}%+ accuracy and at least one complete code block.`;
+  $("ruleBox").textContent = testRun
+    ? "TEST MODE active. Metrics work normally, but this session will not affect Aswin's records or Telegram."
+    : `Session active. Mastery requires ${targetAccuracy}%+ accuracy and at least one complete code block.`;
 
   const sessionId = active.id;
   clearInterval(timer);
@@ -1327,17 +1368,19 @@ async function startSession() {
     if (left <= 0) finishSession("timer");
   }, 500);
 
-  try {
-    const data = await fetchJson("/api/session/start", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...active, id: sessionId })
-    });
-    if (active && active.id === sessionId && data.session?.id === sessionId) {
-      active = { ...active, ...data.session, syncStatus: "synced" };
+  if (!testRun) {
+    try {
+      const data = await fetchJson("/api/session/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...active, id: sessionId })
+      });
+      if (active && active.id === sessionId && data.session?.id === sessionId) {
+        active = { ...active, ...data.session, syncStatus: "synced" };
+      }
+    } catch {
+      if (active && active.id === sessionId) $("syncStatus").textContent = "Server offline, session will save locally";
     }
-  } catch {
-    if (active && active.id === sessionId) $("syncStatus").textContent = "Server offline, session will save locally";
   }
 }
 
@@ -1383,6 +1426,20 @@ async function finishSession(reason = "manual") {
   startBtn.disabled = true;
   resetBtn.disabled = true;
   setSetupDisabled(true);
+
+  if (session.testMode) {
+    renderSessionRecap(session);
+    $("ruleBox").textContent = `TEST MODE RESULT: ${session.accuracy}% accuracy, ${session.wpm} WPM, score ${session.score}/100. Nothing was saved or sent.`;
+    $("ruleBox").className = `rule ${session.completionStatus === "PASS" ? "good" : "warn"}`;
+    $("syncStatus").textContent = "TEST MODE · result discarded";
+    finishing = false;
+    startBtn.disabled = false;
+    resetBtn.disabled = false;
+    setSetupDisabled(false);
+    updateTestModeUI();
+    showRandomTip();
+    return;
+  }
 
   const beforeProgress = progressCheckpoint();
   applySessionToProgress(session, { force: true });
@@ -1450,6 +1507,10 @@ function interruptActiveSession(reason = "RESET", useBeacon = false) {
   if (!active || finishing) return null;
   clearInterval(timer);
   const session = buildInterruptedSession(reason);
+  if (session.testMode) {
+    active = null;
+    return session;
+  }
   const beforeProgress = progressCheckpoint();
   active = null;
   applySessionToProgress(session, { force: true });
@@ -1511,7 +1572,11 @@ function reset() {
   $("symbolFocus").className = "hand-focus";
   $("pasteStatus").textContent = "Paste blocked: 0 attempts";
   $("ruleBox").className = "rule";
-  $("ruleBox").textContent = interrupted ? "Previous session recorded as INTERRUPTED. It remains in the recommended queue." : `Pass condition: ${targetAccuracy}% accuracy or higher and at least one full code block.`;
+  $("ruleBox").textContent = interrupted?.testMode
+    ? "TEST MODE session discarded. No progress, history or Telegram data was changed."
+    : interrupted
+      ? "Previous session recorded as INTERRUPTED. It remains in the recommended queue."
+      : `Pass condition: ${targetAccuracy}% accuracy or higher and at least one full code block.`;
   $("sessionRecap").classList.add("hidden");
   setTime(Number(durationSel.value));
   showRandomTip();
@@ -1576,31 +1641,55 @@ layoutBtn?.addEventListener("click", cycleEditorLayout);
 focusEditorBtn?.addEventListener("click", () => toggleEditorFocus());
 durationSel.addEventListener("change", () => {
   if (!active) setTime(Number(durationSel.value));
-  progressState.settings.duration = Number(durationSel.value);
-  saveProgressState();
+  if (!isTestModeEnabled()) {
+    progressState.settings.duration = Number(durationSel.value);
+    saveProgressState();
+  }
 });
 mode.addEventListener("change", () => {
   if (active) return;
   startBtn.dataset.preferredExerciseId = "";
-  progressState.settings.mode = mode.value;
-  progressState.settings.level = 1;
+  if (!isTestModeEnabled()) {
+    progressState.settings.mode = mode.value;
+    progressState.settings.level = 1;
+  }
   refreshLevelOptions();
   level.value = "1";
-  saveProgressState();
+  if (!isTestModeEnabled()) saveProgressState();
   updateEditorChrome();
 });
 level.addEventListener("change", () => {
   if (active) return;
   startBtn.dataset.preferredExerciseId = "";
-  progressState.settings.level = Number(level.value);
-  saveProgressState();
+  if (!isTestModeEnabled()) {
+    progressState.settings.level = Number(level.value);
+    saveProgressState();
+  }
   updateEditorChrome();
 });
 revisionMode.addEventListener("change", () => {
-  progressState.settings.revisionMode = revisionMode.checked;
-  saveProgressState();
+  if (!isTestModeEnabled()) {
+    progressState.settings.revisionMode = revisionMode.checked;
+    saveProgressState();
+  }
   $("ruleBox").textContent = revisionMode.checked ? "Revision Mode enabled. Mastered exercises may be selected, but revision attempts do not remove mastery." : `Normal progression mode. Mastered exercises will not be selected again.`;
 });
+testMode?.addEventListener("change", () => {
+  if (active) return;
+  startBtn.dataset.preferredExerciseId = "";
+  if (testMode.checked) {
+    transientTestEditorLayout = progressState.settings.editorLayout || "auto";
+  } else {
+    transientTestEditorLayout = null;
+    applyEditorLayout(progressState.settings.editorLayout || "auto");
+  }
+  updateTestModeUI();
+  $("ruleBox").className = "rule";
+  $("ruleBox").textContent = testMode.checked
+    ? "TEST MODE enabled. Sessions run normally but are discarded, not synced, not counted, and not sent to Telegram."
+    : `Pass condition: ${targetAccuracy}% accuracy or higher and at least one full code block.`;
+});
+
 continueBtn.addEventListener("click", () => {
   if (active) return;
   const recMode = continueBtn.dataset.mode;
@@ -1610,10 +1699,12 @@ continueBtn.addEventListener("click", () => {
   if (recLevel) level.value = recLevel;
   revisionMode.checked = false;
   startBtn.dataset.preferredExerciseId = continueBtn.dataset.exerciseId || "";
-  progressState.settings.mode = mode.value;
-  progressState.settings.level = Number(level.value);
-  progressState.settings.revisionMode = false;
-  saveProgressState();
+  if (!isTestModeEnabled()) {
+    progressState.settings.mode = mode.value;
+    progressState.settings.level = Number(level.value);
+    progressState.settings.revisionMode = false;
+    saveProgressState();
+  }
   startSession();
 });
 
@@ -1627,6 +1718,7 @@ window.addEventListener("keydown", event => {
 });
 
 initializeSelections();
+updateTestModeUI();
 renderProgressUI();
 updateEditorChrome();
 updateEditorMatch();

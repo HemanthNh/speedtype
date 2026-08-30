@@ -775,3 +775,37 @@ body.editor-focus-active .practice.layout-stacked .typing-editor textarea {
     min-height: 240px;
   }
 }
+
+
+/* v5.9 isolated Test Mode */
+.setup { grid-template-columns: 1.2fr .72fr .78fr 1fr 1.1fr auto; }
+.test-toggle {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 10px;
+  border: 1px solid #f59e0b;
+  border-radius: 10px;
+  background: #fffbeb;
+  color: #92400e;
+}
+.test-toggle input { margin-right: 6px; accent-color: #d97706; }
+.test-toggle span { color: #a16207; font-size: 10px; font-weight: 700; }
+.test-mode-banner {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid #f59e0b;
+  border-radius: 10px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .03em;
+  text-align: center;
+}
+body.test-mode-active .practice { box-shadow: inset 0 0 0 2px #f59e0b; }
+@media (max-width: 1180px) { .setup { grid-template-columns: 1fr 1fr 1fr; } }
+@media (max-width: 700px) { .setup { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .setup { grid-template-columns: 1fr; } }

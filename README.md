@@ -1,4 +1,4 @@
-# Aswin Typing Monitor v5.5
+# Aswin Typing Monitor v5.9
 
 A testing-focused typing practice app for learning good automation-testing patterns while improving technical typing accuracy and speed.
 
@@ -17,7 +17,7 @@ Modes:
 
 Each mode has four progressive levels. Every exercise has a unique ID and a visible learning focus. The content reinforces practices such as pytest fixtures and parameterization, explicit request timeouts, stable Selenium locators, explicit waits, Page Objects, screenshots, JMeter correlation and JSR223/Groovy, randomized pacing, non-GUI JMeter execution, Postman assertions and correlation, Newman reporting, expected negative tests, environment-based configuration and unique test data.
 
-## Code-friendly editor workspace, v5.5
+## Code-friendly editor workspace
 
 The practice surface now behaves like a lightweight coding editor rather than a plain textarea.
 
@@ -327,3 +327,8 @@ The test suite covers:
 - Narrow windows stack only when necessary, with compact reference and typing heights.
 - Focus Editor keeps both panes on one row on laptop/desktop screens unless Stacked is explicitly selected.
 - Both editors scroll internally, so moving through code does not require scrolling the page between the two panes.
+
+
+## v5.9 Test Mode
+
+Use the **Test mode** toggle when validating the app on another laptop or browser. Test Mode runs the editor, timer, WPM, accuracy, score, heatmap and result recap normally, but intentionally does **not** update Aswin's mastery, session history, last activity, streak, daily/weekly targets, server `sessions.json`, synchronization queue, or Telegram notifications. The backend also rejects Test Mode persistence as a second safety layer.

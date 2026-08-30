@@ -393,7 +393,7 @@ const server = http.createServer(async (req, res) => {
       const sessions = readSessions();
       let imported = 0;
       for (const item of incoming) {
-        if (!item?.id || !item.completedAt) continue;
+        if (!item?.id || !item.completedAt || item.testMode === true) continue;
         const existing = sessions.find(s => s.id === String(item.id));
         if (existing) continue;
         const session = sanitizeSessionStart(item);
@@ -411,6 +411,9 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "POST" && url.pathname === "/api/session/start") {
     try {
       const body = await bodyJson(req);
+      if (body.testMode === true) {
+        return sendJson(res, 200, { testMode: true, discarded: true, notification: { ok: false, reason: "Test Mode is never persisted or sent" } });
+      }
       const sessions = readSessions();
       const id = String(body.id || crypto.randomUUID());
       const existing = sessions.find(s => s.id === id);
@@ -429,6 +432,9 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "POST" && (url.pathname === "/api/session/complete" || url.pathname === "/api/session/interrupt")) {
     try {
       const body = await bodyJson(req);
+      if (body.testMode === true) {
+        return sendJson(res, 200, { testMode: true, discarded: true, notification: { ok: false, reason: "Test Mode is never persisted or sent" } });
+      }
       if (!body.id) return sendJson(res, 400, { error: "Session id is required" });
 
       const sessions = readSessions();
@@ -461,7 +467,7 @@ const server = http.createServer(async (req, res) => {
 
 if (require.main === module) {
   server.listen(PORT, HOST, () => {
-    console.log(`Typing Monitor v5.8 running at http://localhost:${PORT}`);
+    console.log(`Typing Monitor v5.9 running at http://localhost:${PORT}`);
   });
 }
 
