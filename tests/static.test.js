@@ -39,3 +39,13 @@ test('deployment files contain no hardcoded Telegram credentials and use Render-
   assert.match(envExample, /TELEGRAM_BOT_TOKEN=/);
   assert.match(envExample, /TELEGRAM_CHAT_ID=/);
 });
+
+test('code practice surface includes editor affordances and non-wrapping input', () => {
+  assert.match(html, /id="referenceLineNumbers"/);
+  assert.match(html, /id="typingLineNumbers"/);
+  assert.match(html, /id="caretStatus"/);
+  assert.match(html, /id="editorMatchStatus"/);
+  assert.match(html, /id="typingBox"[^>]*wrap="off"/s);
+  assert.match(app, /addEventListener\("keydown", applyEditorTab\)/);
+  assert.match(app, /core\.applyTabEdit/);
+});

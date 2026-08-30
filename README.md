@@ -1,4 +1,4 @@
-# Aswin Typing Monitor v5.3
+# Aswin Typing Monitor v5.4
 
 A testing-focused typing practice app for learning good automation-testing patterns while improving technical typing accuracy and speed.
 
@@ -16,6 +16,27 @@ Modes:
 - Right-Hand QA Focus
 
 Each mode has four progressive levels. Every exercise has a unique ID and a visible learning focus. The content reinforces practices such as pytest fixtures and parameterization, explicit request timeouts, stable Selenium locators, explicit waits, Page Objects, screenshots, JMeter correlation and JSR223/Groovy, randomized pacing, non-GUI JMeter execution, Postman assertions and correlation, Newman reporting, expected negative tests, environment-based configuration and unique test data.
+
+## Code-friendly editor workspace, v5.4
+
+The practice surface now behaves like a lightweight coding editor rather than a plain textarea.
+
+Features:
+
+- side-by-side reference code and typing editor on desktop, stacked cleanly on smaller screens
+- IDE-style dark code panes with monospace fonts
+- line-number gutters for both reference and typed code
+- non-wrapping code lines with horizontal scrolling
+- synchronized reference scrolling while the learner types
+- live line and column position
+- live exact/mismatch status
+- `Tab` stays inside the editor and inserts spaces to the next four-space tab stop
+- `Shift + Tab` unindents the current line
+- selected multi-line code can be indented or unindented with `Tab` and `Shift + Tab`
+- visible `Spaces: 4`, `UTF-8` and Tab-enabled editor status
+- reference file labels adapt to the selected testing domain
+
+The exercise bank itself continues to use spaces for indentation. Pressing Tab therefore produces the exact indentation expected by Python, Selenium, JMeter/Groovy and Postman exercises without inserting literal tab characters.
 
 ## v5.2+ progress system
 
@@ -163,7 +184,7 @@ aswinTypingProgressV3
 
 The browser keeps up to 250 recent session records and a per-exercise progress ledger.
 
-## Telegram coaching reports, v5.3
+## Telegram coaching reports, v5.3+
 
 Telegram credentials are never hardcoded in source code. Telegram failures are handled gracefully and never stop typing practice.
 
@@ -235,6 +256,10 @@ The test suite covers:
 - detailed Telegram completion-report content
 - milestone-only notification behavior
 - Telegram message-length clamping
+- code-editor Tab and Shift+Tab behavior
+- multi-line indent and unindent behavior
+- line and column tracking
+- code-editor DOM affordances and non-wrapping input
 
 - JavaScript syntax
 - 144-exercise bank structure and unique IDs

@@ -174,6 +174,74 @@
     return d.toLocaleDateString("en-CA");
   }
 
+  function lineColumn(value, index) {
+    const text = String(value || "");
+    const safeIndex = Math.max(0, Math.min(text.length, Number(index || 0)));
+    const before = text.slice(0, safeIndex);
+    const lines = before.split("\n");
+    return { line: lines.length, column: lines[lines.length - 1].length + 1 };
+  }
+
+  function applyTabEdit(value, selectionStart, selectionEnd, shiftKey, indentSize = 4) {
+    const text = String(value || "");
+    const size = Math.max(1, Number(indentSize || 4));
+    let start = Math.max(0, Math.min(text.length, Number(selectionStart || 0)));
+    let end = Math.max(start, Math.min(text.length, Number(selectionEnd ?? start)));
+
+    const lineStart = text.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
+    const selectionEndsAtLineStart = end > start && text[end - 1] === "\n";
+    let blockEnd = selectionEndsAtLineStart ? Math.max(lineStart, end - 1) : end;
+    if (shiftKey && start === end) {
+      const nextLineBreak = text.indexOf("\n", start);
+      blockEnd = nextLineBreak === -1 ? text.length : nextLineBreak;
+    }
+    const spansMultipleLines = text.slice(lineStart, blockEnd).includes("\n");
+
+    if (!shiftKey && start === end) {
+      const { column } = lineColumn(text, start);
+      const zeroBasedColumn = column - 1;
+      const count = size - (zeroBasedColumn % size || 0);
+      const spaces = " ".repeat(count);
+      return {
+        value: text.slice(0, start) + spaces + text.slice(end),
+        selectionStart: start + count,
+        selectionEnd: start + count
+      };
+    }
+
+    if (!shiftKey && (spansMultipleLines || end > start)) {
+      const selectedBlock = text.slice(lineStart, blockEnd);
+      const lines = selectedBlock.split("\n");
+      const indent = " ".repeat(size);
+      const replacement = lines.map(line => indent + line).join("\n");
+      const prefixAdjustment = size;
+      const added = size * lines.length;
+      return {
+        value: text.slice(0, lineStart) + replacement + text.slice(blockEnd),
+        selectionStart: start + prefixAdjustment,
+        selectionEnd: end + added
+      };
+    }
+
+    const selectedBlock = text.slice(lineStart, blockEnd);
+    const lines = selectedBlock.split("\n");
+    let removedBeforeStart = 0;
+    let removedTotal = 0;
+    const replacement = lines.map((line, index) => {
+      const match = line.match(new RegExp(`^ {1,${size}}`));
+      const removeCount = match ? match[0].length : (line.startsWith("\t") ? 1 : 0);
+      if (index === 0) removedBeforeStart = Math.min(removeCount, Math.max(0, start - lineStart));
+      removedTotal += removeCount;
+      return line.slice(removeCount);
+    }).join("\n");
+
+    return {
+      value: text.slice(0, lineStart) + replacement + text.slice(blockEnd),
+      selectionStart: Math.max(lineStart, start - removedBeforeStart),
+      selectionEnd: Math.max(lineStart, end - removedTotal)
+    };
+  }
+
   function sessionSummary(sessions, gate, now) {
     const completed = (sessions || []).filter(s => s.completedAt);
     const scored = completed.filter(s => s.completionStatus !== "INTERRUPTED" && Number(s.exerciseBlocksCompleted || 0) > 0);
@@ -227,6 +295,8 @@
     handOfExpectedChar,
     classifyMistakes,
     calculateTypingStats,
+    lineColumn,
+    applyTabEdit,
     allDrills,
     levelProgress,
     domainProgress,

@@ -38,6 +38,13 @@ const accEl = $("accuracy");
 const errEl = $("errors");
 const liveScoreEl = $("liveScore");
 const continueBtn = $("continueBtn");
+const referenceLineNumbers = $("referenceLineNumbers");
+const typingLineNumbers = $("typingLineNumbers");
+const caretStatus = $("caretStatus");
+const editorMatchStatus = $("editorMatchStatus");
+const referenceFile = $("referenceFile");
+const referenceMeta = $("referenceMeta");
+const referencePosition = $("referencePosition");
 
 let progressState = loadProgressState();
 
@@ -803,6 +810,106 @@ function renderProgressUI() {
   updateDailyChallenge();
 }
 
+function editorFileName(modeName) {
+  const names = {
+    "Python Automation": "test_automation.py",
+    "Selenium": "test_ui.py",
+    "JMeter": "jmeter_script.groovy",
+    "Postman": "postman_tests.js",
+    "Mixed Testing": "qa_workflow.txt",
+    "Right-Hand QA Focus": "qa_focus.txt"
+  };
+  return names[modeName] || "reference.txt";
+}
+
+function renderLineNumbers(element, count, activeLine = 0) {
+  if (!element) return;
+  const safeCount = Math.max(1, Number(count || 1));
+  const active = Math.max(0, Number(activeLine || 0));
+  element.innerHTML = Array.from({ length: safeCount }, (_, index) => {
+    const line = index + 1;
+    return `<span${line === active ? ' class="active"' : ""}>${line}</span>`;
+  }).join("");
+}
+
+function updateEditorChrome() {
+  const target = promptEl.textContent || "";
+  const lineCount = Math.max(1, target.split("\n").length);
+  const typedLineCount = Math.max(1, String(box.value || "").split("\n").length);
+  const caret = core.lineColumn(box.value, Number(box.selectionStart || 0));
+  renderLineNumbers(referenceLineNumbers, lineCount, Math.min(caret.line, lineCount));
+  renderLineNumbers(typingLineNumbers, Math.max(lineCount, typedLineCount), caret.line);
+  if (referenceFile) referenceFile.textContent = editorFileName(active?.mode || mode.value);
+  if (referenceMeta) referenceMeta.textContent = activeExercise ? `${activeExercise.id} • Block ${exerciseBlockNumber}` : "Reference";
+  if (referencePosition) referencePosition.textContent = `${lineCount} line${lineCount === 1 ? "" : "s"}`;
+  if (caretStatus) caretStatus.textContent = `Ln ${caret.line}, Col ${caret.column}`;
+}
+
+function syncReferenceGutter() {
+  if (referenceLineNumbers) referenceLineNumbers.style.transform = `translateY(-${Number(promptEl.scrollTop || 0)}px)`;
+}
+
+function syncEditorScroll() {
+  if (!box || !promptEl) return;
+  promptEl.scrollTop = box.scrollTop || 0;
+  promptEl.scrollLeft = box.scrollLeft || 0;
+  if (typingLineNumbers) typingLineNumbers.style.transform = `translateY(-${Number(box.scrollTop || 0)}px)`;
+  syncReferenceGutter();
+}
+
+function updateEditorMatch(stats) {
+  if (!editorMatchStatus) return;
+  if (!active) {
+    editorMatchStatus.textContent = "Ready";
+    editorMatchStatus.className = "";
+    return;
+  }
+  if (!box.value.length) {
+    editorMatchStatus.textContent = "Start typing";
+    editorMatchStatus.className = "";
+    return;
+  }
+  if (Number(stats?.errors || 0) === 0) {
+    editorMatchStatus.textContent = "Exact so far";
+    editorMatchStatus.className = "good";
+  } else if (Number(stats?.accuracy || 0) >= targetAccuracy) {
+    editorMatchStatus.textContent = `${stats.errors} mismatch${stats.errors === 1 ? "" : "es"}`;
+    editorMatchStatus.className = "warn";
+  } else {
+    editorMatchStatus.textContent = `${stats.errors} mismatch${stats.errors === 1 ? "" : "es"}`;
+    editorMatchStatus.className = "bad";
+  }
+}
+
+function handleTypingChange() {
+  if (!active || finishing) {
+    updateEditorChrome();
+    return;
+  }
+  const first = compute();
+  extendPromptIfComplete();
+  const stats = active && !finishing ? compute() : first;
+  updateEditorMatch(stats);
+  updateEditorChrome();
+  syncEditorScroll();
+}
+
+function applyEditorTab(event) {
+  if (!active || finishing || box.disabled || event.key !== "Tab") return;
+  event.preventDefault();
+  const result = core.applyTabEdit(
+    box.value,
+    Number(box.selectionStart || 0),
+    Number(box.selectionEnd ?? box.selectionStart ?? 0),
+    Boolean(event.shiftKey),
+    4
+  );
+  box.value = result.value;
+  box.selectionStart = result.selectionStart;
+  box.selectionEnd = result.selectionEnd;
+  handleTypingChange();
+}
+
 function showRandomTip() {
   if (!typingTips.length) return;
   $("typingTip").textContent = typingTips[Math.floor(Math.random() * typingTips.length)];
@@ -907,6 +1014,7 @@ function extendPromptIfComplete() {
   exerciseBlockNumber++;
   promptEl.textContent += `\n\n${activeExercise.text}`;
   $("learningFocus").textContent = `Block ${exerciseBlockNumber} | ${activeExercise.id} | ${activeExercise.concept}`;
+  updateEditorChrome();
   markExerciseInProgress(activeExercise);
   showRandomTip();
 }
@@ -1089,6 +1197,12 @@ async function startSession() {
   $("sessionRecap").classList.add("hidden");
   showRandomTip();
   box.value = "";
+  box.selectionStart = 0;
+  box.selectionEnd = 0;
+  box.scrollTop = 0;
+  box.scrollLeft = 0;
+  promptEl.scrollTop = 0;
+  promptEl.scrollLeft = 0;
   pasteAttempts = 0;
   startedAt = Date.now();
   finishing = false;
@@ -1134,6 +1248,9 @@ async function startSession() {
   setSetupDisabled(true);
   box.disabled = false;
   box.focus();
+  updateEditorChrome();
+  updateEditorMatch();
+  syncEditorScroll();
   $("pasteStatus").textContent = "Paste blocked: 0 attempts";
   $("ruleBox").className = "rule";
   $("ruleBox").textContent = `Session active. Mastery requires ${targetAccuracy}%+ accuracy and at least one complete code block.`;
@@ -1198,6 +1315,8 @@ async function finishSession(reason = "manual") {
 
   const session = buildCompletedSession(reason);
   active = null;
+  updateEditorMatch();
+  updateEditorChrome();
   finishBtn.disabled = true;
   box.disabled = true;
   startBtn.disabled = true;
@@ -1297,6 +1416,12 @@ function reset() {
   const interrupted = interruptActiveSession("RESET");
   startedAt = null;
   box.value = "";
+  box.selectionStart = 0;
+  box.selectionEnd = 0;
+  box.scrollTop = 0;
+  box.scrollLeft = 0;
+  promptEl.scrollTop = 0;
+  promptEl.scrollLeft = 0;
   pasteAttempts = 0;
   exerciseBlockNumber = 0;
   completedExerciseBlocks = 0;
@@ -1309,6 +1434,9 @@ function reset() {
   finishing = false;
   promptEl.textContent = "Press Start Practice to begin.";
   $("learningFocus").textContent = "Choose a testing domain and level. Each exercise includes a best-practice learning focus.";
+  updateEditorChrome();
+  updateEditorMatch();
+  syncEditorScroll();
   wpmEl.textContent = "0";
   accEl.textContent = "100%";
   accEl.className = "";
@@ -1367,12 +1495,13 @@ box.addEventListener("drop", event => {
 box.addEventListener("beforeinput", event => {
   if (event.inputType === "insertFromPaste" || event.inputType === "insertFromDrop") event.preventDefault();
 });
-box.addEventListener("input", () => {
-  if (!active || finishing) return;
-  compute();
-  extendPromptIfComplete();
-  if (active && !finishing) compute();
-});
+box.addEventListener("keydown", applyEditorTab);
+box.addEventListener("input", handleTypingChange);
+box.addEventListener("keyup", updateEditorChrome);
+box.addEventListener("click", updateEditorChrome);
+box.addEventListener("select", updateEditorChrome);
+box.addEventListener("scroll", syncEditorScroll);
+promptEl.addEventListener("scroll", syncReferenceGutter);
 
 startBtn.addEventListener("click", () => startSession().catch(() => {
   $("ruleBox").textContent = "Unable to start the session cleanly. Reset and try again.";
@@ -1394,12 +1523,14 @@ mode.addEventListener("change", () => {
   refreshLevelOptions();
   level.value = "1";
   saveProgressState();
+  updateEditorChrome();
 });
 level.addEventListener("change", () => {
   if (active) return;
   startBtn.dataset.preferredExerciseId = "";
   progressState.settings.level = Number(level.value);
   saveProgressState();
+  updateEditorChrome();
 });
 revisionMode.addEventListener("change", () => {
   progressState.settings.revisionMode = revisionMode.checked;
@@ -1428,6 +1559,8 @@ window.addEventListener("beforeunload", () => {
 
 initializeSelections();
 renderProgressUI();
+updateEditorChrome();
+updateEditorMatch();
 setTime(Number(durationSel.value));
 showRandomTip();
 refreshConfig();

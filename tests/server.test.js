@@ -155,4 +155,8 @@ test('server supports idempotent start, durable completion API and interruption 
   const home = await fetch(`${baseUrl}/`);
   assert.equal(home.status, 200);
   assert.match(await home.text(), /Overall learning progress/);
+
+  const head = await fetch(`${baseUrl}/`, { method: 'HEAD' });
+  assert.equal(head.status, 200);
+  assert.match(head.headers.get('content-type') || '', /text\/html/);
 });

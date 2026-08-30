@@ -139,7 +139,7 @@ function serveStatic(req, res) {
       "Content-Type": contentType(filePath),
       "Cache-Control": filePath.endsWith("index.html") ? "no-cache" : "public, max-age=300"
     });
-    res.end(data);
+    res.end(req.method === "HEAD" ? undefined : data);
   });
 }
 
@@ -455,7 +455,7 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  if (req.method !== "GET") return sendJson(res, 404, { error: "Not found" });
+  if (req.method !== "GET" && req.method !== "HEAD") return sendJson(res, 404, { error: "Not found" });
   serveStatic(req, res);
 });
 

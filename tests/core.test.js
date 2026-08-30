@@ -44,3 +44,32 @@ test('progress summary separates core progress from overall progress', () => {
   assert.equal(summary.coreTotal, 4);
   assert.equal(summary.repeatQueue.length, 1);
 });
+
+test('code editor Tab uses four-space tab stops and Shift+Tab unindents', () => {
+  let edit = core.applyTabEdit('value = 1', 0, 0, false, 4);
+  assert.equal(edit.value, '    value = 1');
+  assert.equal(edit.selectionStart, 4);
+
+  edit = core.applyTabEdit('  value = 1', 2, 2, false, 4);
+  assert.equal(edit.value, '    value = 1');
+  assert.equal(edit.selectionStart, 4);
+
+  edit = core.applyTabEdit('    value = 1', 8, 8, true, 4);
+  assert.equal(edit.value, 'value = 1');
+  assert.equal(edit.selectionStart, 4);
+});
+
+test('code editor can indent and unindent selected multi-line code', () => {
+  const source = 'first\nsecond';
+  const indented = core.applyTabEdit(source, 0, source.length, false, 4);
+  assert.equal(indented.value, '    first\n    second');
+
+  const outdented = core.applyTabEdit(indented.value, 0, indented.value.length, true, 4);
+  assert.equal(outdented.value, source);
+});
+
+test('line and column status is one-based for editor display', () => {
+  assert.deepEqual(core.lineColumn('abc\ndef', 0), { line: 1, column: 1 });
+  assert.deepEqual(core.lineColumn('abc\ndef', 4), { line: 2, column: 1 });
+  assert.deepEqual(core.lineColumn('abc\ndef', 7), { line: 2, column: 4 });
+});

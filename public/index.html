@@ -105,12 +105,60 @@
 
     <div class="rule" id="ruleBox">Pass condition: 97% accuracy or higher and at least one full code block.</div>
 
-    <div class="prompt-label">Type this exactly</div>
-    <div class="prompt" id="prompt">Press Start Practice to begin.</div>
+    <div class="code-practice-head">
+      <div>
+        <div class="prompt-label">Code practice workspace</div>
+        <div class="editor-help">Use <kbd>Tab</kbd> for indentation and <kbd>Shift</kbd> + <kbd>Tab</kbd> to unindent. Tab uses a 4-space coding tab stop.</div>
+      </div>
+      <div class="editor-badges">
+        <span>Monospace</span>
+        <span>No line wrap</span>
+        <span>Spaces: 4</span>
+      </div>
+    </div>
+
     <div class="learning-focus" id="learningFocus">Choose a testing domain and level. Each exercise includes a best-practice learning focus.</div>
 
-    <textarea id="typingBox" disabled spellcheck="false" autocomplete="off" autocapitalize="off"
-      placeholder="Type here exactly as shown above..."></textarea>
+    <div class="code-workspace">
+      <section class="code-editor reference-editor" aria-label="Reference code">
+        <div class="editor-titlebar">
+          <div class="editor-title-left">
+            <span class="editor-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <strong id="referenceFile">reference.txt</strong>
+          </div>
+          <span id="referenceMeta">Reference</span>
+        </div>
+        <div class="editor-body">
+          <div class="line-number-gutter" aria-hidden="true"><div id="referenceLineNumbers" class="line-numbers">1</div></div>
+          <pre class="prompt" id="prompt" tabindex="0">Press Start Practice to begin.</pre>
+        </div>
+        <div class="editor-statusbar">
+          <span>REFERENCE</span>
+          <span id="referencePosition">1 line</span>
+        </div>
+      </section>
+
+      <section class="code-editor typing-editor" aria-label="Typing code editor">
+        <div class="editor-titlebar">
+          <div class="editor-title-left">
+            <span class="editor-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <strong>your_code</strong>
+          </div>
+          <span id="editorMatchStatus">Ready</span>
+        </div>
+        <div class="editor-body">
+          <div class="line-number-gutter" aria-hidden="true"><div id="typingLineNumbers" class="line-numbers">1</div></div>
+          <textarea id="typingBox" disabled spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"
+            aria-label="Type the reference code exactly" placeholder="Type the reference code here..."></textarea>
+        </div>
+        <div class="editor-statusbar">
+          <span id="caretStatus">Ln 1, Col 1</span>
+          <span>Spaces: 4</span>
+          <span>UTF-8</span>
+          <span>Tab enabled</span>
+        </div>
+      </section>
+    </div>
 
     <div class="feedback-row">
       <div id="mistakeSummary">No mistakes yet.</div>

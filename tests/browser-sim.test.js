@@ -236,3 +236,23 @@ test('reset during delayed server start records interruption without reviving th
   await settle();
   assert.equal(vm.runInContext('active', app.context), null);
 });
+
+test('Tab stays inside the typing editor and inserts coding indentation', async () => {
+  const app = makeAppContext(new Map());
+  await settle();
+  await vm.runInContext('startSession()', app.context);
+  const box = app.elements.get('typingBox');
+  box.value = '';
+  box.selectionStart = 0;
+  box.selectionEnd = 0;
+  const keptFocus = box.dispatchEvent({ type: 'keydown', key: 'Tab', shiftKey: false });
+  assert.equal(keptFocus, false, 'Tab should be prevented from moving focus away');
+  assert.equal(box.value, '    ');
+  assert.equal(box.selectionStart, 4);
+  assert.match(app.elements.get('caretStatus').textContent, /Ln 1, Col 5/);
+
+  box.dispatchEvent({ type: 'keydown', key: 'Tab', shiftKey: true });
+  assert.equal(box.value, '');
+  assert.equal(box.selectionStart, 0);
+  vm.runInContext('reset()', app.context);
+});
