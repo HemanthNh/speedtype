@@ -290,3 +290,33 @@ test('editor layout preference cycles and focus mode can be entered and exited',
   vm.runInContext('toggleEditorFocus(false)', app.context);
   assert.equal(app.context.document.body.classList.contains('editor-focus-active'), false);
 });
+
+
+test('typing does not pull a manually positioned reference pane back to the top', async () => {
+  const app = makeAppContext(new Map());
+  await settle();
+  await vm.runInContext('startSession()', app.context);
+
+  const box = app.elements.get('typingBox');
+  const reference = app.elements.get('prompt');
+  reference.scrollTop = 140;
+  reference.scrollLeft = 32;
+  box.scrollTop = 0;
+  box.scrollLeft = 0;
+
+  box.value = 'x';
+  box.selectionStart = 1;
+  box.selectionEnd = 1;
+  box.dispatchEvent({ type: 'input' });
+
+  assert.equal(reference.scrollTop, 140, 'ordinary typing must preserve reference vertical scroll');
+  assert.equal(reference.scrollLeft, 32, 'ordinary typing must preserve reference horizontal scroll');
+
+  box.scrollTop = 88;
+  box.scrollLeft = 16;
+  box.dispatchEvent({ type: 'scroll' });
+  assert.equal(reference.scrollTop, 88, 'actual typing-pane scrolling should still synchronize vertically');
+  assert.equal(reference.scrollLeft, 16, 'actual typing-pane scrolling should still synchronize horizontally');
+
+  vm.runInContext('reset()', app.context);
+});

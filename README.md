@@ -309,3 +309,12 @@ The test suite covers:
 - The browser progress key remains `aswinTypingProgressV3`, so deploying this update to the same Render service URL does not reset browser progress.
 - Do not intentionally clear browser site data during an update. Browser localStorage is currently the resilient copy used to restore progress when the Render Free filesystem is reset.
 - Render Free `data/sessions.json` remains ephemeral. For guaranteed cross-device and long-term server-side retention, move session storage to a persistent database.
+
+
+## v5.7 editor scroll stability
+
+- Fixed reference editor jumping back to the top while typing in the input editor.
+- Reference scroll position is now preserved during ordinary keystrokes.
+- Synchronized scrolling still occurs when the typing editor is actually scrolled.
+- Added a browser-simulation regression test covering both behaviors.
+- Existing progress storage namespace remains unchanged, so upgrading does not reset browser progress.

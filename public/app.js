@@ -912,7 +912,10 @@ function handleTypingChange() {
   const stats = active && !finishing ? compute() : first;
   updateEditorMatch(stats);
   updateEditorChrome();
-  syncEditorScroll();
+  // Do not force reference scrolling on every keystroke. The typing textarea
+  // can transiently report scrollTop=0 during input/layout updates in some
+  // browsers, which would pull the reference pane back to the top. Genuine
+  // scroll events from the typing pane remain the source of scroll sync.
 }
 
 function applyEditorTab(event) {
