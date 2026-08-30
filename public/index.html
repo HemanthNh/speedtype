@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aswin Typing Monitor</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="wrap">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">WorldSkills support drill</p>
+      <h1>Typing Accuracy Monitor</h1>
+      <p>Accuracy is the gate. Speed matters only after consistent precision.</p>
+    </div>
+    <div class="hero-actions">
+      <span class="status" id="notifyStatus">Checking Telegram...</span>
+      <button class="secondary small" id="testNotifyBtn">Test Telegram</button>
+    </div>
+  </section>
+
+  <section class="summary-grid">
+    <div class="stat"><span>Today's practice</span><strong id="todayMinutes">0 min</strong><small>Target 20 min</small></div>
+    <div class="stat"><span>Average accuracy</span><strong id="avgAccuracy">0%</strong><small>Target 97%+</small></div>
+    <div class="stat"><span>Best WPM</span><strong id="bestWpm">0</strong><small>Only counts with accuracy</small></div>
+    <div class="stat"><span>Streak</span><strong id="streak">0 days</strong><small>Completed sessions</small></div>
+  </section>
+
+  <section class="card setup">
+    <div>
+      <label>Practice mode
+        <select id="mode">
+          <option value="Accuracy">Accuracy</option>
+          <option value="Right Hand Focus">Right Hand Focus</option>
+          <option value="Right Hand Symbols">Right Hand Symbols</option>
+          <option value="Technical Commands">Technical Commands</option>
+          <option value="Code & JSON">Code & JSON</option>
+          <option value="Mixed Technical">Mixed Technical</option>
+          <option value="Speed">Speed</option>
+        </select>
+      </label>
+    </div>
+    <div>
+      <label>Level
+        <select id="level">
+          <option value="1">Level 1</option>
+          <option value="2">Level 2</option>
+          <option value="3">Level 3</option>
+          <option value="4">Level 4</option>
+        </select>
+      </label>
+    </div>
+    <div>
+      <label>Duration
+        <select id="duration">
+          <option value="300">5 minutes</option>
+          <option value="600" selected>10 minutes</option>
+          <option value="900">15 minutes</option>
+          <option value="1200">20 minutes</option>
+        </select>
+      </label>
+    </div>
+    <button id="startBtn">Start Practice</button>
+  </section>
+
+  <section class="card practice">
+    <div class="metrics">
+      <div><span>Time</span><strong id="time">10:00</strong></div>
+      <div><span>WPM</span><strong id="wpm">0</strong></div>
+      <div><span>Accuracy</span><strong id="accuracy">100%</strong></div>
+      <div><span>Errors</span><strong id="errors">0</strong></div>
+      <div><span>Score</span><strong id="liveScore">70</strong></div>
+    </div>
+
+    <div class="rule" id="ruleBox">Pass condition: 97% accuracy or higher.</div>
+
+    <div class="prompt-label">Type this exactly</div>
+    <div class="prompt" id="prompt">Press Start Practice to begin.</div>
+
+    <textarea id="typingBox" disabled spellcheck="false" autocomplete="off" autocapitalize="off"
+      placeholder="Type here exactly as shown above..."></textarea>
+
+    <div class="feedback-row">
+      <div id="mistakeSummary">No mistakes yet.</div>
+      <div id="charProgress">0 / 0 characters</div>
+    </div>
+    <div class="diagnostic-row">
+      <div id="handFocus" class="hand-focus">Right-hand focus analytics will appear here.</div>
+      <div id="pasteStatus" class="paste-status">Paste blocked: 0 attempts</div>
+    </div>
+
+    <div class="actions">
+      <button id="finishBtn" disabled>Finish Session</button>
+      <button id="resetBtn" class="secondary">Reset</button>
+    </div>
+  </section>
+
+
+  <section class="motivation-grid">
+    <div class="card tip-card">
+      <div class="mini-label">Typing tip</div>
+      <div id="typingTip" class="typing-tip">Keep your right hand relaxed and return to J K L ; after difficult reaches.</div>
+    </div>
+    <div class="card challenge-card">
+      <div class="mini-label">Today's challenge</div>
+      <div class="challenge-text">Complete one Level 3 or 4 technical drill at 98%+ accuracy with fewer than 3 right-hand errors.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <div>
+        <h2>Achievements</h2>
+        <p>Progress markers based on actual typing quality.</p>
+      </div>
+    </div>
+    <div id="achievements" class="achievement-wrap">Complete sessions to unlock achievements.</div>
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <div>
+        <h2>Recent sessions</h2>
+        <p>Accuracy-first history, failed sessions should be repeated.</p>
+      </div>
+    </div>
+    <div id="history" class="history">No sessions yet.</div>
+  </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
