@@ -821,19 +821,64 @@ function renderTrendsAndMetrics() {
   renderMainInsights();
 }
 
+function mistakeSeverity(ratio) {
+  return ratio >= 0.75 ? "critical" : ratio >= 0.5 ? "high" : ratio >= 0.28 ? "medium" : "low";
+}
+
+function renderHeatmapInto(elementId, keyErrors) {
+  const el = $(elementId);
+  if (!el) return;
+  if (!keyErrors.length) {
+    el.textContent = "No key-error data yet.";
+    return;
+  }
+  const max = keyErrors[0][1] || 1;
+  el.innerHTML = keyErrors.map(([key, count]) => {
+    const ratio = Math.max(0.12, Number(count || 0) / max);
+    const severity = mistakeSeverity(ratio);
+    return `<span class="heat-key heat-${severity}" title="${count} errors"><strong>${escapeHtml(key)}</strong><small>${count} error${count === 1 ? "" : "s"}</small></span>`;
+  }).join("");
+}
+
+function renderMistakeBarChart(keyErrors) {
+  const el = $("mistakeBarChart");
+  if (!el) return;
+  if (!keyErrors.length) {
+    el.textContent = "No key-error data yet.";
+    if ($("mistakeHighlight")) $("mistakeHighlight").textContent = "No error data";
+    return;
+  }
+
+  const top = keyErrors.slice(0, 8);
+  const max = top[0][1] || 1;
+  const total = keyErrors.reduce((sum, [, count]) => sum + Number(count || 0), 0);
+  const [topKey, topCount] = top[0];
+  if ($("mistakeHighlight")) {
+    $("mistakeHighlight").textContent = `${topKey} · ${topCount} errors`;
+  }
+
+  el.innerHTML = `<div class="mistake-ranking">${top.map(([key, count], index) => {
+    const ratio = Math.max(0.05, Number(count || 0) / max);
+    const severity = mistakeSeverity(ratio);
+    const share = total ? Math.round(Number(count || 0) / total * 100) : 0;
+    return `<div class="mistake-bar-row">
+      <div class="mistake-key-rank"><span>${index + 1}</span><code>${escapeHtml(key)}</code></div>
+      <div class="mistake-bar-track" title="${count} errors, ${share}% of recorded key errors">
+        <span class="mistake-bar-fill severity-${severity}" style="width:${Math.round(ratio * 100)}%"></span>
+      </div>
+      <div class="mistake-bar-value"><strong>${count}</strong><small>${share}%</small></div>
+    </div>`;
+  }).join("")}</div>`;
+}
+
 function renderDiagnostics() {
   const completed = mergeSessions().filter(s => s.completedAt);
-  const keyErrors = Object.entries(aggregateKeyErrors(completed)).sort((a, b) => b[1] - a[1]).slice(0, 16);
-  if (keyErrors.length) {
-    const max = keyErrors[0][1] || 1;
-    $("mistakeHeatmap").innerHTML = keyErrors.map(([key, count]) => {
-      const ratio = Math.max(0.12, count / max);
-      const severity = ratio >= 0.75 ? "critical" : ratio >= 0.5 ? "high" : ratio >= 0.28 ? "medium" : "low";
-      return `<span class="heat-key heat-${severity}" title="${count} errors"><strong>${escapeHtml(key)}</strong><small>${count} error${count === 1 ? "" : "s"}</small></span>`;
-    }).join("");
-  } else {
-    $("mistakeHeatmap").textContent = "No key-error data yet.";
-  }
+  const allKeyErrors = Object.entries(aggregateKeyErrors(completed)).sort((a, b) => b[1] - a[1]);
+  const top16 = allKeyErrors.slice(0, 16);
+
+  renderHeatmapInto("mistakeHeatmap", top16);
+  renderHeatmapInto("mistakeHeatmapMain", top16);
+  renderMistakeBarChart(allKeyErrors);
 
   const recent = completed.slice(0, 10);
   if (!recent.length) {

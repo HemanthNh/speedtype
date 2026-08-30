@@ -256,6 +256,43 @@
     </div>
   </section>
 
+  <section class="card mistake-insights-card">
+    <div class="section-head mistake-insights-head">
+      <div>
+        <h2>Mistake analysis</h2>
+        <p>See which keys create the most errors and how severe each weakness is.</p>
+      </div>
+      <div class="chart-highlight" id="mistakeHighlight">No error data</div>
+    </div>
+    <div class="mistake-insight-grid">
+      <section class="chart-card mistake-ranking-card">
+        <div class="chart-card-head">
+          <div>
+            <div class="mini-label">Top error keys</div>
+            <h3>Ranked by total mistakes</h3>
+          </div>
+        </div>
+        <div id="mistakeBarChart" class="mistake-bar-chart">No key-error data yet.</div>
+      </section>
+
+      <section class="chart-card mistake-heat-card">
+        <div class="chart-card-head">
+          <div>
+            <div class="mini-label">Color-coded heatmap</div>
+            <h3>Weak keys at a glance</h3>
+          </div>
+        </div>
+        <div class="mistake-legend" aria-label="Mistake severity legend">
+          <span><i class="severity-dot severity-low"></i>Low</span>
+          <span><i class="severity-dot severity-medium"></i>Medium</span>
+          <span><i class="severity-dot severity-high"></i>High</span>
+          <span><i class="severity-dot severity-critical"></i>Critical</span>
+        </div>
+        <div id="mistakeHeatmapMain" class="heatmap main-heatmap">No key-error data yet.</div>
+      </section>
+    </div>
+  </section>
+
   <details class="card advanced-panel" id="advancedPanel">
     <summary>
       <div>

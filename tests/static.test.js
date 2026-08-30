@@ -95,3 +95,14 @@ test('Test Mode is visibly available and isolated in the client', () => {
   assert.match(app, /if \(!testRun\)/);
   assert.match(css, /\.test-mode-banner/);
 });
+
+test('main dashboard exposes ranked and color-coded mistake analysis', () => {
+  assert.match(html, /id="mistakeBarChart"/);
+  assert.match(html, /id="mistakeHeatmapMain"/);
+  assert.match(html, /id="mistakeHighlight"/);
+  assert.match(html, /Mistake analysis/);
+  assert.match(app, /renderMistakeBarChart/);
+  assert.match(app, /renderHeatmapInto\("mistakeHeatmapMain"/);
+  assert.match(css, /\.mistake-bar-fill\.severity-critical/);
+  assert.match(css, /\.mistake-insight-grid/);
+});

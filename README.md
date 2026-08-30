@@ -1,6 +1,13 @@
-# Aswin Typing Monitor v5.9
+# Aswin Typing Monitor v6.1
 
 A testing-focused typing practice app for learning good automation-testing patterns while improving technical typing accuracy and speed.
+
+
+## Visual analytics and mistake analysis
+
+The main dashboard is intentionally minimal. It keeps the practice workflow and the most useful progress signals visible, while detailed tables and diagnostics live inside Advanced Analysis.
+
+Main visualizations include accuracy trend, accuracy-valid WPM trend, seven-day practice activity, domain mastery, and a visible Mistake Analysis section. Mistake Analysis combines a ranked horizontal error chart with the color-coded key heatmap. Severity is shown as low, medium, high, and critical, and the detailed heatmap remains available inside Advanced Analysis.
 
 ## Practice bank
 
