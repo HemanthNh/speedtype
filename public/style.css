@@ -598,3 +598,180 @@ body.editor-focus-active .practice.layout-stacked .typing-editor textarea {
     min-height: 320px;
   }
 }
+
+/* v5.8 viewport-fit editor sizing
+   Keep both code panes visible together on ordinary laptop screens. */
+.code-workspace {
+  align-items: stretch;
+}
+
+/* Auto and explicit side-by-side use a viewport-aware editor height. */
+.practice:not(.layout-stacked) .editor-body,
+.practice:not(.layout-stacked) .prompt,
+.practice:not(.layout-stacked) .code-editor textarea,
+.practice.layout-side .editor-body,
+.practice.layout-side .prompt,
+.practice.layout-side .code-editor textarea {
+  height: clamp(280px, calc(100vh - 430px), 430px);
+  min-height: 280px;
+}
+
+/* Laptop widths should keep both editors on the same row.
+   Stacking is reserved for genuinely narrow windows. */
+@media (min-width: 1080px) {
+  .practice:not(.layout-stacked) .code-workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+/* Mid-size windows still fit both panes by tightening editor chrome slightly. */
+@media (min-width: 1080px) and (max-width: 1365px) {
+  .prompt,
+  .code-editor textarea {
+    font-size: 13px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .editor-body {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+  .line-numbers {
+    font-size: 13px;
+    padding-right: 8px;
+  }
+}
+
+/* Only narrow displays stack automatically. Keep the combined code area compact
+   enough that reference and typing panes can still be seen without large page jumps. */
+@media (max-width: 1079px) {
+  .practice:not(.layout-side) .code-workspace {
+    grid-template-columns: 1fr;
+  }
+  .practice:not(.layout-side) .reference-editor .editor-body,
+  .practice:not(.layout-side) .reference-editor .prompt {
+    height: clamp(150px, 20vh, 210px);
+    min-height: 150px;
+  }
+  .practice:not(.layout-side) .typing-editor .editor-body,
+  .practice:not(.layout-side) .typing-editor textarea {
+    height: clamp(210px, 29vh, 300px);
+    min-height: 210px;
+  }
+}
+
+/* Short laptop displays need less vertical chrome around the editors. */
+@media (min-width: 1080px) and (max-height: 820px) {
+  .practice {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .practice .metrics > div {
+    padding: 8px 10px;
+  }
+  .practice .metrics strong {
+    font-size: 19px;
+  }
+  .practice .rule {
+    margin-top: 9px;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .practice .code-practice-head {
+    margin-top: 10px;
+  }
+  .practice .learning-focus {
+    margin-top: 8px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+  }
+  .practice .code-workspace {
+    margin-top: 8px;
+  }
+  .practice:not(.layout-stacked) .editor-body,
+  .practice:not(.layout-stacked) .prompt,
+  .practice:not(.layout-stacked) .code-editor textarea {
+    height: clamp(265px, calc(100vh - 405px), 350px);
+    min-height: 265px;
+  }
+}
+
+/* Focus Editor is guaranteed to keep both panes side by side on laptop/desktop
+   unless the user explicitly chose Stacked. No scrolling between editors. */
+@media (min-width: 900px) {
+  body.editor-focus-active .practice:not(.layout-stacked) .code-workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  body.editor-focus-active .practice:not(.layout-stacked) .editor-body,
+  body.editor-focus-active .practice:not(.layout-stacked) .prompt,
+  body.editor-focus-active .practice:not(.layout-stacked) .code-editor textarea {
+    height: clamp(300px, calc(100vh - 315px), 640px);
+    min-height: 300px;
+  }
+}
+
+/* Very short displays sacrifice pane height, not page position. */
+@media (min-width: 900px) and (max-height: 700px) {
+  body.editor-focus-active .practice:not(.layout-stacked) .editor-body,
+  body.editor-focus-active .practice:not(.layout-stacked) .prompt,
+  body.editor-focus-active .practice:not(.layout-stacked) .code-editor textarea {
+    height: clamp(240px, calc(100vh - 300px), 330px);
+    min-height: 240px;
+  }
+}
+
+/* Specificity overrides for the older laptop-stacked sizing rules. */
+@media (min-width: 1080px) {
+  .practice:not(.layout-stacked):not(.layout-side) .reference-editor .editor-body,
+  .practice:not(.layout-stacked):not(.layout-side) .reference-editor .prompt,
+  .practice:not(.layout-stacked):not(.layout-side) .typing-editor .editor-body,
+  .practice:not(.layout-stacked):not(.layout-side) .typing-editor textarea,
+  .practice.layout-side .reference-editor .editor-body,
+  .practice.layout-side .reference-editor .prompt,
+  .practice.layout-side .typing-editor .editor-body,
+  .practice.layout-side .typing-editor textarea {
+    height: clamp(280px, calc(100vh - 430px), 430px);
+    min-height: 280px;
+  }
+}
+
+@media (min-width: 1080px) and (max-height: 820px) {
+  .practice:not(.layout-stacked):not(.layout-side) .reference-editor .editor-body,
+  .practice:not(.layout-stacked):not(.layout-side) .reference-editor .prompt,
+  .practice:not(.layout-stacked):not(.layout-side) .typing-editor .editor-body,
+  .practice:not(.layout-stacked):not(.layout-side) .typing-editor textarea,
+  .practice.layout-side .reference-editor .editor-body,
+  .practice.layout-side .reference-editor .prompt,
+  .practice.layout-side .typing-editor .editor-body,
+  .practice.layout-side .typing-editor textarea {
+    height: clamp(265px, calc(100vh - 405px), 350px);
+    min-height: 265px;
+  }
+}
+
+@media (min-width: 900px) {
+  body.editor-focus-active .practice:not(.layout-stacked):not(.layout-side) .reference-editor .editor-body,
+  body.editor-focus-active .practice:not(.layout-stacked):not(.layout-side) .reference-editor .prompt,
+  body.editor-focus-active .practice:not(.layout-stacked):not(.layout-side) .typing-editor .editor-body,
+  body.editor-focus-active .practice:not(.layout-stacked):not(.layout-side) .typing-editor textarea,
+  body.editor-focus-active .practice.layout-side .reference-editor .editor-body,
+  body.editor-focus-active .practice.layout-side .reference-editor .prompt,
+  body.editor-focus-active .practice.layout-side .typing-editor .editor-body,
+  body.editor-focus-active .practice.layout-side .typing-editor textarea {
+    height: clamp(300px, calc(100vh - 315px), 640px);
+    min-height: 300px;
+  }
+}
+
+@media (min-width: 900px) and (max-height: 700px) {
+  body.editor-focus-active .practice:not(.layout-stacked):not(.layout-side) .reference-editor .editor-body,
+  body.editor-focus-active .practice:not(.layout-stacked):not(.layout-side) .reference-editor .prompt,
+  body.editor-focus-active .practice:not(.layout-stacked):not(.layout-side) .typing-editor .editor-body,
+  body.editor-focus-active .practice:not(.layout-stacked):not(.layout-side) .typing-editor textarea,
+  body.editor-focus-active .practice.layout-side .reference-editor .editor-body,
+  body.editor-focus-active .practice.layout-side .reference-editor .prompt,
+  body.editor-focus-active .practice.layout-side .typing-editor .editor-body,
+  body.editor-focus-active .practice.layout-side .typing-editor textarea {
+    height: clamp(240px, calc(100vh - 300px), 330px);
+    min-height: 240px;
+  }
+}

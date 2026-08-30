@@ -318,3 +318,12 @@ The test suite covers:
 - Synchronized scrolling still occurs when the typing editor is actually scrolled.
 - Added a browser-simulation regression test covering both behaviors.
 - Existing progress storage namespace remains unchanged, so upgrading does not reset browser progress.
+
+## v5.8 viewport-fit editor heights
+
+- Auto layout keeps Reference Code and Your Code side by side from 1080px upward, covering common 1366px and 1440px laptops.
+- Editor heights now adapt to the browser viewport instead of using large fixed `vh` blocks.
+- Short laptop displays compact the practice-card chrome to preserve code space.
+- Narrow windows stack only when necessary, with compact reference and typing heights.
+- Focus Editor keeps both panes on one row on laptop/desktop screens unless Stacked is explicitly selected.
+- Both editors scroll internally, so moving through code does not require scrolling the page between the two panes.

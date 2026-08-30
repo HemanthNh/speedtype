@@ -461,7 +461,7 @@ const server = http.createServer(async (req, res) => {
 
 if (require.main === module) {
   server.listen(PORT, HOST, () => {
-    console.log(`Typing Monitor v5.3 running at http://localhost:${PORT}`);
+    console.log(`Typing Monitor v5.8 running at http://localhost:${PORT}`);
   });
 }
 

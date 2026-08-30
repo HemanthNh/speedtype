@@ -77,3 +77,12 @@ test('app updates preserve the established browser progress storage namespace', 
   assert.match(app, /const OLD_PROGRESS_KEY = "aswinTypingProgressV2"/);
   assert.equal(/localStorage\.clear\s*\(/.test(app), false);
 });
+
+
+test('viewport-fit editor keeps both panes on one row for common laptop widths', () => {
+  assert.match(css, /@media \(min-width: 1080px\)[\s\S]*?\.practice:not\(\.layout-stacked\) \.code-workspace\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 1fr\)/);
+  assert.match(css, /height:\s*clamp\(280px, calc\(100vh - 430px\), 430px\)/);
+  assert.match(css, /@media \(min-width: 1080px\) and \(max-height: 820px\)/);
+  assert.match(css, /@media \(max-width: 1079px\)/);
+  assert.match(css, /body\.editor-focus-active \.practice:not\(\.layout-stacked\) \.code-workspace/);
+});
