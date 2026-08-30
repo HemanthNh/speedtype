@@ -35,3 +35,12 @@ test('every exercise contains meaningful testing content and a learning concept'
     assert.equal(exercise.text.includes('queue[7] = "HIGH";'), false, `${exercise.id} contains old generic drill`);
   }
 });
+
+
+test('exercise lines are formatted for code-editor readability', () => {
+  for (const exercise of flatten()) {
+    for (const [index, line] of exercise.text.split('\n').entries()) {
+      assert.ok(line.length <= 88, `${exercise.id} line ${index + 1} is ${line.length} characters`);
+    }
+  }
+});

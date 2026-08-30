@@ -45,6 +45,10 @@ const editorMatchStatus = $("editorMatchStatus");
 const referenceFile = $("referenceFile");
 const referenceMeta = $("referenceMeta");
 const referencePosition = $("referencePosition");
+const longLineStatus = $("longLineStatus");
+const practiceCard = $("practiceCard");
+const layoutBtn = $("layoutBtn");
+const focusEditorBtn = $("focusEditorBtn");
 
 let progressState = loadProgressState();
 
@@ -59,7 +63,8 @@ function defaultProgressState() {
       mode: "Python Automation",
       level: 1,
       duration: 600,
-      revisionMode: false
+      revisionMode: false,
+      editorLayout: "auto"
     },
     updatedAt: null
   };
@@ -605,7 +610,11 @@ function renderDiagnostics() {
   const keyErrors = Object.entries(aggregateKeyErrors(completed)).sort((a, b) => b[1] - a[1]).slice(0, 16);
   if (keyErrors.length) {
     const max = keyErrors[0][1] || 1;
-    $("mistakeHeatmap").innerHTML = keyErrors.map(([key, count]) => `<span class="heat-key" title="${count} errors" style="--heat:${Math.max(0.18, count / max)}"><strong>${escapeHtml(key)}</strong><small>${count}</small></span>`).join("");
+    $("mistakeHeatmap").innerHTML = keyErrors.map(([key, count]) => {
+      const ratio = Math.max(0.12, count / max);
+      const severity = ratio >= 0.75 ? "critical" : ratio >= 0.5 ? "high" : ratio >= 0.28 ? "medium" : "low";
+      return `<span class="heat-key heat-${severity}" title="${count} errors"><strong>${escapeHtml(key)}</strong><small>${count} error${count === 1 ? "" : "s"}</small></span>`;
+    }).join("");
   } else {
     $("mistakeHeatmap").textContent = "No key-error data yet.";
   }
@@ -810,16 +819,23 @@ function renderProgressUI() {
   updateDailyChallenge();
 }
 
-function editorFileName(modeName) {
-  const names = {
-    "Python Automation": "test_automation.py",
-    "Selenium": "test_ui.py",
-    "JMeter": "jmeter_script.groovy",
-    "Postman": "postman_tests.js",
-    "Mixed Testing": "qa_workflow.txt",
-    "Right-Hand QA Focus": "qa_focus.txt"
-  };
-  return names[modeName] || "reference.txt";
+function editorFileName(modeName, exercise = activeExercise) {
+  const text = String(exercise?.text || "").trimStart();
+  if (text.startsWith("jmeter ") || text.startsWith("New-Item ")) return "jmeter_run.ps1";
+  if (text.startsWith("newman ")) return "newman_run.ps1";
+  if (text.startsWith("python -m pytest")) return "regression_run.ps1";
+  if (modeName === "JMeter") {
+    if (/prev\.|vars\.|AssertionResult|JsonSlurper|JsonOutput/.test(text)) return "jmeter_script.groovy";
+    return "jmeter_config.txt";
+  }
+  if (modeName === "Postman") return "postman_tests.js";
+  if (modeName === "Python Automation") return "test_automation.py";
+  if (modeName === "Selenium") return "test_ui.py";
+  if (/pm\.|newman /.test(text)) return text.startsWith("newman ") ? "newman_run.ps1" : "postman_tests.js";
+  if (/prev\.|vars\.|AssertionResult|jmeter /.test(text)) return text.startsWith("jmeter ") ? "jmeter_run.ps1" : "jmeter_script.groovy";
+  if (/webdriver|selenium|driver\.|WebDriverWait|By\./i.test(text)) return "test_ui.py";
+  if (/pytest|api_client|requests\.|def test_/i.test(text)) return "test_automation.py";
+  return modeName === "Right-Hand QA Focus" ? "qa_focus.txt" : "qa_workflow.txt";
 }
 
 function renderLineNumbers(element, count, activeLine = 0) {
@@ -839,9 +855,14 @@ function updateEditorChrome() {
   const caret = core.lineColumn(box.value, Number(box.selectionStart || 0));
   renderLineNumbers(referenceLineNumbers, lineCount, Math.min(caret.line, lineCount));
   renderLineNumbers(typingLineNumbers, Math.max(lineCount, typedLineCount), caret.line);
-  if (referenceFile) referenceFile.textContent = editorFileName(active?.mode || mode.value);
+  if (referenceFile) referenceFile.textContent = editorFileName(active?.mode || mode.value, activeExercise);
   if (referenceMeta) referenceMeta.textContent = activeExercise ? `${activeExercise.id} • Block ${exerciseBlockNumber}` : "Reference";
   if (referencePosition) referencePosition.textContent = `${lineCount} line${lineCount === 1 ? "" : "s"}`;
+  const maxLineLength = Math.max(0, ...target.split("\n").map(line => line.length));
+  if (longLineStatus) {
+    longLineStatus.textContent = maxLineLength > 100 ? `Long line: ${maxLineLength} chars` : `Max line: ${maxLineLength} chars`;
+    longLineStatus.className = maxLineLength > 100 ? "warn" : "";
+  }
   if (caretStatus) caretStatus.textContent = `Ln ${caret.line}, Col ${caret.column}`;
 }
 
@@ -908,6 +929,43 @@ function applyEditorTab(event) {
   box.selectionStart = result.selectionStart;
   box.selectionEnd = result.selectionEnd;
   handleTypingChange();
+}
+
+
+function applyEditorLayout(layout = progressState.settings.editorLayout || "auto") {
+  const allowed = new Set(["auto", "stacked", "side"]);
+  const next = allowed.has(layout) ? layout : "auto";
+  progressState.settings.editorLayout = next;
+  if (practiceCard) {
+    practiceCard.classList.remove("layout-stacked", "layout-side");
+    if (next === "stacked") practiceCard.classList.add("layout-stacked");
+    if (next === "side") practiceCard.classList.add("layout-side");
+  }
+  if (layoutBtn) {
+    const labels = { auto: "Layout: Auto", stacked: "Layout: Stacked", side: "Layout: Side by side" };
+    layoutBtn.textContent = labels[next];
+    layoutBtn.title = "Cycle between automatic, stacked and side-by-side editor layouts";
+  }
+  return next;
+}
+
+function cycleEditorLayout() {
+  const current = progressState.settings.editorLayout || "auto";
+  const next = current === "auto" ? "stacked" : current === "stacked" ? "side" : "auto";
+  applyEditorLayout(next);
+  saveProgressState();
+  window.requestAnimationFrame?.(() => syncEditorScroll());
+}
+
+function toggleEditorFocus(force) {
+  const body = document.body;
+  if (!body) return;
+  const currentlyFocused = body.classList.contains("editor-focus-active");
+  const shouldFocus = typeof force === "boolean" ? force : !currentlyFocused;
+  body.classList.toggle("editor-focus-active", shouldFocus);
+  if (focusEditorBtn) focusEditorBtn.textContent = shouldFocus ? "Exit focus" : "Focus editor";
+  if (shouldFocus && !box.disabled) box.focus();
+  setTimeout(() => syncEditorScroll(), 0);
 }
 
 function showRandomTip() {
@@ -1480,6 +1538,7 @@ function initializeSelections() {
   level.value = String(Math.min(4, Math.max(1, Number(progressState.settings.level || 1))));
   durationSel.value = String([300, 600, 900, 1200].includes(Number(progressState.settings.duration)) ? Number(progressState.settings.duration) : 600);
   revisionMode.checked = Boolean(progressState.settings.revisionMode);
+  applyEditorLayout(progressState.settings.editorLayout || "auto");
 }
 
 box.addEventListener("paste", event => {
@@ -1510,6 +1569,8 @@ startBtn.addEventListener("click", () => startSession().catch(() => {
 finishBtn.addEventListener("click", () => finishSession("manual"));
 resetBtn.addEventListener("click", reset);
 $("testNotifyBtn").addEventListener("click", testNotification);
+layoutBtn?.addEventListener("click", cycleEditorLayout);
+focusEditorBtn?.addEventListener("click", () => toggleEditorFocus());
 durationSel.addEventListener("change", () => {
   if (!active) setTime(Number(durationSel.value));
   progressState.settings.duration = Number(durationSel.value);
@@ -1555,6 +1616,11 @@ continueBtn.addEventListener("click", () => {
 
 window.addEventListener("beforeunload", () => {
   if (active && !finishing) interruptActiveSession("PAGE_CLOSED", true);
+});
+window.addEventListener("keydown", event => {
+  if (event.key === "Escape" && document.body?.classList.contains("editor-focus-active")) {
+    toggleEditorFocus(false);
+  }
 });
 
 initializeSelections();

@@ -11,6 +11,12 @@ class FakeClassList {
   add(...names) { names.forEach(n => this.set.add(n)); this.el.className = [...this.set].join(' '); }
   remove(...names) { names.forEach(n => this.set.delete(n)); this.el.className = [...this.set].join(' '); }
   contains(name) { return this.set.has(name); }
+  toggle(name, force) {
+    const shouldAdd = typeof force === 'boolean' ? force : !this.set.has(name);
+    if (shouldAdd) this.set.add(name); else this.set.delete(name);
+    this.el.className = [...this.set].join(' ');
+    return shouldAdd;
+  }
 }
 
 class FakeElement {
@@ -64,6 +70,7 @@ function makeAppContext(sharedStorage = new Map(), options = {}) {
   for (const match of html.matchAll(/<([a-zA-Z0-9]+)[^>]*\sid="([^"]+)"/g)) elements.set(match[2], new FakeElement(match[1], match[2]));
 
   const document = {
+    body: new FakeElement('body', 'body'),
     getElementById(id) { return elements.get(id) || null; },
     createElement(tag) { return new FakeElement(tag); }
   };
@@ -255,4 +262,31 @@ test('Tab stays inside the typing editor and inserts coding indentation', async 
   assert.equal(box.value, '');
   assert.equal(box.selectionStart, 0);
   vm.runInContext('reset()', app.context);
+});
+
+
+test('editor layout preference cycles and focus mode can be entered and exited', async () => {
+  const app = makeAppContext(new Map());
+  await settle();
+  const practice = app.elements.get('practiceCard');
+  const layout = app.elements.get('layoutBtn');
+  assert.equal(layout.textContent, 'Layout: Auto');
+
+  layout.click();
+  assert.equal(layout.textContent, 'Layout: Stacked');
+  assert.equal(practice.classList.contains('layout-stacked'), true);
+
+  layout.click();
+  assert.equal(layout.textContent, 'Layout: Side by side');
+  assert.equal(practice.classList.contains('layout-side'), true);
+
+  layout.click();
+  assert.equal(layout.textContent, 'Layout: Auto');
+  assert.equal(practice.classList.contains('layout-stacked'), false);
+  assert.equal(practice.classList.contains('layout-side'), false);
+
+  app.elements.get('focusEditorBtn').click();
+  assert.equal(app.context.document.body.classList.contains('editor-focus-active'), true);
+  vm.runInContext('toggleEditorFocus(false)', app.context);
+  assert.equal(app.context.document.body.classList.contains('editor-focus-active'), false);
 });

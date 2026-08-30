@@ -5,6 +5,7 @@ const path = require('node:path');
 
 const html = fs.readFileSync(path.join(__dirname, '../public/index.html'), 'utf8');
 const app = fs.readFileSync(path.join(__dirname, '../public/app.js'), 'utf8');
+const css = fs.readFileSync(path.join(__dirname, '../public/style.css'), 'utf8');
 
 test('HTML ids are unique', () => {
   const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]);
@@ -48,4 +49,31 @@ test('code practice surface includes editor affordances and non-wrapping input',
   assert.match(html, /id="typingBox"[^>]*wrap="off"/s);
   assert.match(app, /addEventListener\("keydown", applyEditorTab\)/);
   assert.match(app, /core\.applyTabEdit/);
+});
+
+
+test('responsive editor includes wide, stacked and focus layouts', () => {
+  assert.match(html, /id="practiceCard"/);
+  assert.match(html, /id="layoutBtn"/);
+  assert.match(html, /id="focusEditorBtn"/);
+  assert.match(html, /id="longLineStatus"/);
+  assert.match(css, /width:\s*min\(1700px/);
+  assert.match(css, /@media \(max-width: 1540px\)/);
+  assert.match(css, /editor-focus-active/);
+  assert.match(app, /cycleEditorLayout/);
+  assert.match(app, /toggleEditorFocus/);
+});
+
+test('mistake heatmap uses accessible severity colors and high-contrast text', () => {
+  assert.match(app, /heat-\$\{severity\}/);
+  assert.match(app, /ratio >= 0\.75 \? "critical"/);
+  assert.match(css, /\.heat-key\.heat-high[^}]*color:\s*#ffffff/s);
+  assert.match(css, /\.heat-key\.heat-critical[^}]*color:\s*#ffffff/s);
+  assert.match(css, /\.heat-key\.heat-low[^}]*background:\s*#fff7ed/s);
+});
+
+test('app updates preserve the established browser progress storage namespace', () => {
+  assert.match(app, /const PROGRESS_KEY = "aswinTypingProgressV3"/);
+  assert.match(app, /const OLD_PROGRESS_KEY = "aswinTypingProgressV2"/);
+  assert.equal(/localStorage\.clear\s*\(/.test(app), false);
 });

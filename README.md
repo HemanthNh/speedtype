@@ -1,4 +1,4 @@
-# Aswin Typing Monitor v5.4
+# Aswin Typing Monitor v5.5
 
 A testing-focused typing practice app for learning good automation-testing patterns while improving technical typing accuracy and speed.
 
@@ -17,7 +17,7 @@ Modes:
 
 Each mode has four progressive levels. Every exercise has a unique ID and a visible learning focus. The content reinforces practices such as pytest fixtures and parameterization, explicit request timeouts, stable Selenium locators, explicit waits, Page Objects, screenshots, JMeter correlation and JSR223/Groovy, randomized pacing, non-GUI JMeter execution, Postman assertions and correlation, Newman reporting, expected negative tests, environment-based configuration and unique test data.
 
-## Code-friendly editor workspace, v5.4
+## Code-friendly editor workspace, v5.5
 
 The practice surface now behaves like a lightweight coding editor rather than a plain textarea.
 
@@ -37,6 +37,19 @@ Features:
 - reference file labels adapt to the selected testing domain
 
 The exercise bank itself continues to use spaces for indentation. Pressing Tab therefore produces the exact indentation expected by Python, Selenium, JMeter/Groovy and Postman exercises without inserting literal tab characters.
+
+### Responsive window and line-width handling
+
+The practice card is no longer constrained by the narrower dashboard width. It can use up to 1700 px of the browser window.
+
+- At browser widths up to 1540 px, **Auto layout stacks the reference and typing editors vertically** so each editor gets almost the full window width. This is intended for common 1366 px and 1440 px laptops.
+- On larger desktop windows, Auto layout uses the two editors side by side.
+- **Layout: Auto / Stacked / Side by side** can be cycled manually and the choice is remembered in browser progress settings.
+- **Focus editor** temporarily expands the practice card over the application, similar to an IDE-focused workspace. Escape exits Focus mode.
+- Editor heights scale with the viewport, with a larger typing pane in stacked laptop mode.
+- The reference status bar reports the current maximum source-line width and warns if future content exceeds 100 characters.
+
+The complete 144-exercise bank was audited for line length. **No exercise line is now longer than 88 characters.** Long JMeter and Newman commands are formatted as readable Windows PowerShell multi-line commands using the PowerShell continuation character. Long Selenium, Python, Postman and Groovy statements are broken at language-appropriate boundaries rather than visually soft-wrapped.
 
 ## v5.2+ progress system
 
@@ -260,6 +273,10 @@ The test suite covers:
 - multi-line indent and unindent behavior
 - line and column tracking
 - code-editor DOM affordances and non-wrapping input
+- all 144 exercise lines at 88 characters or fewer
+- responsive wide/stacked/side-by-side editor layout controls
+- Focus Editor entry and exit behavior
+- long-line status indicator
 
 - JavaScript syntax
 - 144-exercise bank structure and unique IDs
@@ -284,3 +301,11 @@ The test suite covers:
 ## Render Free storage note
 
 `data/sessions.json` remains a secondary server-side session copy. Render Free filesystems are ephemeral, so this file is not guaranteed permanent. v5.2 protects same-browser continuity through localStorage and can rehydrate an empty server file from that browser's saved history. A persistent external database is still required for guaranteed centralized, cross-device retention.
+
+
+## v5.6 heatmap and data-safety note
+
+- Mistake heatmap now uses an accessible orange-to-red severity scale. High and critical cells use white text for contrast.
+- The browser progress key remains `aswinTypingProgressV3`, so deploying this update to the same Render service URL does not reset browser progress.
+- Do not intentionally clear browser site data during an update. Browser localStorage is currently the resilient copy used to restore progress when the Render Free filesystem is reset.
+- Render Free `data/sessions.json` remains ephemeral. For guaranteed cross-device and long-term server-side retention, move session storage to a persistent database.

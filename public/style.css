@@ -6,7 +6,7 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; }
-.wrap { max-width: 1100px; margin: 0 auto; padding: 28px 18px 60px; }
+.wrap { max-width: 1160px; margin: 0 auto; padding: 28px 18px 60px; }
 .hero { display: flex; justify-content: space-between; gap: 24px; align-items: center; }
 .hero h1 { margin: 4px 0 8px; font-size: clamp(30px, 5vw, 48px); line-height: 1.05; }
 .hero p { margin: 0; color: #637083; max-width: 650px; }
@@ -215,10 +215,23 @@ textarea { margin-top: 12px; width: 100%; min-height: 180px; resize: vertical; f
 .chart-point span { display: block; min-height: 4px; background: currentColor; border-radius: 4px 4px 0 0; opacity: .75; }
 .chart-point small { text-align: center; font-size: 9px; color: #718096; }
 .heatmap { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.heat-key { min-width: 50px; padding: 10px 8px; border: 1px solid #dfe6ef; border-radius: 10px; text-align: center; background: rgba(23, 32, 51, var(--heat, .12)); color: #172033; }
+.heat-key {
+  min-width: 58px;
+  padding: 10px 9px;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  text-align: center;
+  background: #fff7ed;
+  color: #7c2d12;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.22);
+}
+.heat-key.heat-low { background: #fff7ed; border-color: #fed7aa; color: #7c2d12; }
+.heat-key.heat-medium { background: #fed7aa; border-color: #fdba74; color: #7c2d12; }
+.heat-key.heat-high { background: #ea580c; border-color: #c2410c; color: #ffffff; }
+.heat-key.heat-critical { background: #9a3412; border-color: #7c2d12; color: #ffffff; }
 .heat-key strong, .heat-key small { display: block; }
-.heat-key strong { font-family: Consolas, monospace; font-size: 16px; }
-.heat-key small { margin-top: 3px; font-size: 10px; }
+.heat-key strong { font-family: Consolas, monospace; font-size: 17px; line-height: 1.1; }
+.heat-key small { margin-top: 4px; font-size: 10px; font-weight: 800; color: inherit; opacity: .9; }
 .session-recap { margin-top: 14px; padding: 13px; border-radius: 10px; border: 1px solid #dfe6ef; background: #f8fafc; line-height: 1.55; }
 .session-note { margin-top: 8px; color: #475569; font-size: 12px; font-weight: 700; }
 .hidden { display: none !important; }
@@ -444,4 +457,144 @@ kbd {
   .line-numbers { font-size: 13px; padding-right: 8px; }
   .prompt, .code-editor textarea { font-size: 13px; padding-left: 13px; padding-right: 13px; }
   .editor-statusbar { gap: 8px; flex-wrap: wrap; }
+}
+
+
+/* v5.5 wide, responsive code-workspace refinements */
+.practice {
+  width: min(1700px, calc(100vw - 28px));
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+.code-practice-head {
+  align-items: flex-end;
+}
+.editor-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+.editor-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+.editor-buttons button {
+  padding: 7px 10px;
+  font-size: 10px;
+}
+.code-workspace {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+.editor-body,
+.prompt,
+.code-editor textarea {
+  height: clamp(350px, 46vh, 620px);
+  min-height: 350px;
+}
+.prompt,
+.code-editor textarea {
+  font-size: 14px;
+  line-height: 1.6;
+}
+.editor-statusbar {
+  justify-content: flex-start;
+}
+#longLineStatus.warn {
+  color: #e7c778;
+}
+
+/* User-selected stacked mode always wins. */
+.practice.layout-stacked .code-workspace {
+  grid-template-columns: 1fr;
+}
+.practice.layout-stacked .reference-editor .editor-body,
+.practice.layout-stacked .reference-editor .prompt {
+  height: clamp(220px, 30vh, 360px);
+  min-height: 220px;
+}
+.practice.layout-stacked .typing-editor .editor-body,
+.practice.layout-stacked .typing-editor textarea {
+  height: clamp(330px, 44vh, 560px);
+  min-height: 330px;
+}
+
+/* On laptop-sized windows, stack automatically so code gets real line width. */
+@media (max-width: 1540px) {
+  .practice:not(.layout-side) .code-workspace { grid-template-columns: 1fr; }
+  .practice:not(.layout-side) .reference-editor .editor-body,
+  .practice:not(.layout-side) .reference-editor .prompt {
+    height: clamp(220px, 30vh, 340px);
+    min-height: 220px;
+  }
+  .practice:not(.layout-side) .typing-editor .editor-body,
+  .practice:not(.layout-side) .typing-editor textarea {
+    height: clamp(320px, 43vh, 520px);
+    min-height: 320px;
+  }
+}
+
+/* Focus mode behaves like a lightweight IDE workspace. */
+body.editor-focus-active {
+  overflow: hidden;
+}
+body.editor-focus-active .practice {
+  position: fixed;
+  inset: 8px;
+  z-index: 1000;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  transform: none;
+  overflow: auto;
+  border-radius: 14px;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, .35);
+}
+body.editor-focus-active .practice.layout-stacked .code-workspace {
+  grid-template-columns: 1fr;
+}
+body.editor-focus-active .practice:not(.layout-stacked) .editor-body,
+body.editor-focus-active .practice:not(.layout-stacked) .prompt,
+body.editor-focus-active .practice:not(.layout-stacked) .code-editor textarea {
+  height: clamp(380px, calc(100vh - 330px), 760px);
+  min-height: 380px;
+}
+body.editor-focus-active .practice.layout-stacked .reference-editor .editor-body,
+body.editor-focus-active .practice.layout-stacked .reference-editor .prompt {
+  height: clamp(220px, 28vh, 340px);
+}
+body.editor-focus-active .practice.layout-stacked .typing-editor .editor-body,
+body.editor-focus-active .practice.layout-stacked .typing-editor textarea {
+  height: clamp(320px, 42vh, 560px);
+}
+
+@media (max-width: 820px) {
+  .practice { width: calc(100vw - 16px); }
+  .editor-controls { align-items: stretch; margin-top: 10px; }
+  .editor-buttons, .editor-badges { justify-content: flex-start; }
+  .editor-buttons button { flex: 1 1 auto; }
+}
+@media (max-width: 620px) {
+  .prompt, .code-editor textarea { font-size: 13px; }
+  body.editor-focus-active .practice { inset: 4px; }
+  body.editor-focus-active .practice .code-workspace { grid-template-columns: 1fr; }
+}
+@media (max-width: 820px) {
+  .practice.layout-side .code-workspace { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 1540px) {
+  body.editor-focus-active .practice:not(.layout-side) .reference-editor .editor-body,
+  body.editor-focus-active .practice:not(.layout-side) .reference-editor .prompt {
+    height: clamp(190px, 25vh, 300px);
+    min-height: 190px;
+  }
+  body.editor-focus-active .practice:not(.layout-side) .typing-editor .editor-body,
+  body.editor-focus-active .practice:not(.layout-side) .typing-editor textarea {
+    height: clamp(320px, 46vh, 540px);
+    min-height: 320px;
+  }
 }

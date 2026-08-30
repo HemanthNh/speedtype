@@ -202,8 +202,8 @@ window.TESTING_DRILLS = {
       },
       {
         "id": "SEL3-02",
-        "concept": "Use window handles carefully when a workflow opens a new tab.",
-        "text": "original = driver.current_window_handle\nknown_handles = set(driver.window_handles)\n\nreport_link.click()\n\nwait.until(lambda d: len(d.window_handles) == len(known_handles) + 1)\nnew_handle = next(handle for handle in driver.window_handles if handle not in known_handles)\ndriver.switch_to.window(new_handle)\n\nassert \"Report\" in driver.title\ndriver.close()\ndriver.switch_to.window(original)"
+        "concept": "Use window handles carefully when a workflow opens a new tab, and keep selection logic readable.",
+        "text": "original = driver.current_window_handle\nknown_handles = set(driver.window_handles)\n\nreport_link.click()\n\nwait.until(\n    lambda d: len(d.window_handles) == len(known_handles) + 1\n)\nnew_handle = next(\n    handle\n    for handle in driver.window_handles\n    if handle not in known_handles\n)\ndriver.switch_to.window(new_handle)\n\nassert \"Report\" in driver.title\ndriver.close()\ndriver.switch_to.window(original)"
       },
       {
         "id": "SEL3-03",
@@ -217,8 +217,8 @@ window.TESTING_DRILLS = {
       },
       {
         "id": "SEL3-05",
-        "concept": "Verify sortable-table behavior through visible values.",
-        "text": "from selenium.webdriver.common.by import By\n\npriority_header = driver.find_element(By.CSS_SELECTOR, \"th[data-column='priority']\")\npriority_header.click()\n\nwait.until(lambda d: d.find_element(By.CSS_SELECTOR, \"th[data-column='priority']\").get_attribute(\"aria-sort\") == \"ascending\")\n\nvalues = [\n    cell.text\n    for cell in driver.find_elements(By.CSS_SELECTOR, \"td[data-column='priority']\")\n]\nassert values == sorted(values)"
+        "concept": "Verify sortable-table behavior with readable locators, waits, and visible values.",
+        "text": "from selenium.webdriver.common.by import By\n\npriority_header = driver.find_element(\n    By.CSS_SELECTOR,\n    \"th[data-column='priority']\",\n)\npriority_header.click()\n\nwait.until(\n    lambda d: d.find_element(\n        By.CSS_SELECTOR,\n        \"th[data-column='priority']\",\n    ).get_attribute(\"aria-sort\") == \"ascending\"\n)\n\nvalues = [\n    cell.text\n    for cell in driver.find_elements(\n        By.CSS_SELECTOR,\n        \"td[data-column='priority']\",\n    )\n]\nassert values == sorted(values)"
       },
       {
         "id": "SEL3-06",
@@ -235,7 +235,7 @@ window.TESTING_DRILLS = {
       {
         "id": "SEL4-02",
         "concept": "Model a complete page flow with locators, waits, and clear return values.",
-        "text": "from selenium.webdriver.common.by import By\nfrom selenium.webdriver.support.ui import Select, WebDriverWait\nfrom selenium.webdriver.support import expected_conditions as EC\n\nclass CreateTicketPage:\n    TITLE = (By.ID, \"title\")\n    PRIORITY = (By.ID, \"priority\")\n    DESCRIPTION = (By.ID, \"description\")\n    SUBMIT = (By.CSS_SELECTOR, \"button[data-testid='create-ticket']\")\n    TICKET_ID = (By.CSS_SELECTOR, \"[data-testid='created-ticket-id']\")\n\n    def __init__(self, driver):\n        self.driver = driver\n        self.wait = WebDriverWait(driver, 10)\n\n    def create(self, title, priority, description):\n        self.wait.until(EC.visibility_of_element_located(self.TITLE)).send_keys(title)\n        Select(self.driver.find_element(*self.PRIORITY)).select_by_visible_text(priority)\n        self.driver.find_element(*self.DESCRIPTION).send_keys(description)\n        self.wait.until(EC.element_to_be_clickable(self.SUBMIT)).click()\n        return self.wait.until(EC.visibility_of_element_located(self.TICKET_ID)).text"
+        "text": "from selenium.webdriver.common.by import By\nfrom selenium.webdriver.support.ui import Select, WebDriverWait\nfrom selenium.webdriver.support import expected_conditions as EC\n\nclass CreateTicketPage:\n    TITLE = (By.ID, \"title\")\n    PRIORITY = (By.ID, \"priority\")\n    DESCRIPTION = (By.ID, \"description\")\n    SUBMIT = (By.CSS_SELECTOR, \"button[data-testid='create-ticket']\")\n    TICKET_ID = (By.CSS_SELECTOR, \"[data-testid='created-ticket-id']\")\n\n    def __init__(self, driver):\n        self.driver = driver\n        self.wait = WebDriverWait(driver, 10)\n\n    def create(self, title, priority, description):\n        title_box = self.wait.until(\n            EC.visibility_of_element_located(self.TITLE)\n        )\n        title_box.send_keys(title)\n\n        priority_select = Select(\n            self.driver.find_element(*self.PRIORITY)\n        )\n        priority_select.select_by_visible_text(priority)\n\n        self.driver.find_element(\n            *self.DESCRIPTION\n        ).send_keys(description)\n\n        self.wait.until(\n            EC.element_to_be_clickable(self.SUBMIT)\n        ).click()\n\n        ticket_id = self.wait.until(\n            EC.visibility_of_element_located(self.TICKET_ID)\n        )\n        return ticket_id.text"
       },
       {
         "id": "SEL4-03",
@@ -250,7 +250,7 @@ window.TESTING_DRILLS = {
       {
         "id": "SEL4-05",
         "concept": "Use accessible attributes when verifying stateful controls.",
-        "text": "def test_filter_panel_expands_and_collapses(driver):\n    toggle = driver.find_element(By.CSS_SELECTOR, \"button[data-testid='filters-toggle']\")\n\n    toggle.click()\n    wait.until(lambda d: toggle.get_attribute(\"aria-expanded\") == \"true\")\n    assert driver.find_element(By.ID, \"ticket-filters\").is_displayed()\n\n    toggle.click()\n    wait.until(lambda d: toggle.get_attribute(\"aria-expanded\") == \"false\")"
+        "text": "def test_filter_panel_expands_and_collapses(driver):\n    toggle = driver.find_element(\n        By.CSS_SELECTOR,\n        \"button[data-testid='filters-toggle']\",\n    )\n\n    toggle.click()\n    wait.until(\n        lambda d: toggle.get_attribute(\"aria-expanded\") == \"true\"\n    )\n    assert driver.find_element(\n        By.ID,\n        \"ticket-filters\",\n    ).is_displayed()\n\n    toggle.click()\n    wait.until(\n        lambda d: toggle.get_attribute(\"aria-expanded\") == \"false\"\n    )"
       },
       {
         "id": "SEL4-06",
@@ -268,8 +268,8 @@ window.TESTING_DRILLS = {
       },
       {
         "id": "JM1-02",
-        "concept": "Use JMeter properties so workload values can change without editing the JMX.",
-        "text": "jmeter -n   -t load_test.jmx   -Jusers=10   -Jramp=30   -Jduration=120   -l results/load.jtl"
+        "concept": "Use JMeter properties so workload values can change from a readable PowerShell command.",
+        "text": "jmeter -n `\n    -t load_test.jmx `\n    -Jusers=10 `\n    -Jramp=30 `\n    -Jduration=120 `\n    -l results/load.jtl"
       },
       {
         "id": "JM1-03",
@@ -288,8 +288,8 @@ window.TESTING_DRILLS = {
       },
       {
         "id": "JM1-06",
-        "concept": "Generate the HTML report from the same final JTL file.",
-        "text": "jmeter -n   -t final_regression.jmx   -l results/final_regression.jtl   -e   -o reports/final_regression"
+        "concept": "Generate the HTML report from the same final JTL file with a readable PowerShell command.",
+        "text": "jmeter -n `\n    -t final_regression.jmx `\n    -l results/final_regression.jtl `\n    -e `\n    -o reports/final_regression"
       }
     ],
     "2": [
@@ -333,7 +333,7 @@ window.TESTING_DRILLS = {
       {
         "id": "JM3-02",
         "concept": "Distinguish an expected 403 negative test from an unexpected failure.",
-        "text": "def code = prev.getResponseCode()\ndef body = prev.getResponseDataAsString()\n\nif (code != \"403\") {\n    AssertionResult.setFailure(true)\n    AssertionResult.setFailureMessage(\n        \"Restricted assignment expected HTTP 403, received ${code}; body=${body}\"\n    )\n}"
+        "text": "def code = prev.getResponseCode()\ndef body = prev.getResponseDataAsString()\n\nif (code != \"403\") {\n    AssertionResult.setFailure(true)\n\n    def message = \"Restricted assignment expected HTTP 403, \" +\n        \"received ${code}; body=${body}\"\n\n    AssertionResult.setFailureMessage(message)\n}"
       },
       {
         "id": "JM3-03",
@@ -347,8 +347,8 @@ window.TESTING_DRILLS = {
       },
       {
         "id": "JM3-05",
-        "concept": "Make the final run reproducible with explicit CLI properties and report paths.",
-        "text": "jmeter -n   -t plans/final_regression.jmx   -Jusers=25   -Jramp=60   -Jduration=180   -JbaseUrl=http://localhost:8080   -l results/final_regression.jtl   -e   -o reports/final_regression"
+        "concept": "Make the final run reproducible with explicit properties in a readable PowerShell command.",
+        "text": "jmeter -n `\n    -t plans/final_regression.jmx `\n    -Jusers=25 `\n    -Jramp=60 `\n    -Jduration=180 `\n    -JbaseUrl=http://localhost:8080 `\n    -l results/final_regression.jtl `\n    -e `\n    -o reports/final_regression"
       },
       {
         "id": "JM3-06",
@@ -360,7 +360,7 @@ window.TESTING_DRILLS = {
       {
         "id": "JM4-01",
         "concept": "Use JSR223 assertions to classify unexpected server failures precisely.",
-        "text": "import groovy.json.JsonSlurper\n\ndef code = prev.getResponseCode()\ndef body = prev.getResponseDataAsString()\n\ndef json = null\ntry {\n    json = new JsonSlurper().parseText(body)\n} catch (ignored) {\n    // Keep raw body for diagnostics when response is not JSON.\n}\n\nif (code != \"200\") {\n    AssertionResult.setFailure(true)\n    AssertionResult.setFailureMessage(\n        \"Expected HTTP 200, received ${code}; error=${json?.error ?: body.take(500)}\"\n    )\n}\n\nif (code == \"200\" && json?.status != \"OPEN\") {\n    AssertionResult.setFailure(true)\n    AssertionResult.setFailureMessage(\n        \"Expected status OPEN, received ${json?.status}\"\n    )\n}"
+        "text": "import groovy.json.JsonSlurper\n\ndef code = prev.getResponseCode()\ndef body = prev.getResponseDataAsString()\n\ndef json = null\ntry {\n    json = new JsonSlurper().parseText(body)\n} catch (ignored) {\n    // Keep raw body for diagnostics when response is not JSON.\n}\n\nif (code != \"200\") {\n    AssertionResult.setFailure(true)\n\n    def detail = json?.error ?: body.take(500)\n    def message = \"Expected HTTP 200, received ${code}; \" +\n        \"error=${detail}\"\n\n    AssertionResult.setFailureMessage(message)\n}\n\nif (code == \"200\" && json?.status != \"OPEN\") {\n    AssertionResult.setFailure(true)\n    AssertionResult.setFailureMessage(\n        \"Expected status OPEN, received ${json?.status}\"\n    )\n}"
       },
       {
         "id": "JM4-02",
@@ -379,8 +379,8 @@ window.TESTING_DRILLS = {
       },
       {
         "id": "JM4-05",
-        "concept": "Run baseline and final regression separately so evidence is not mixed.",
-        "text": "mkdir -p results reports\n\njmeter -n   -t plans/baseline.jmx   -l results/baseline.jtl   -e -o reports/baseline\n\njmeter -n   -t plans/final_regression.jmx   -l results/final_regression.jtl   -e -o reports/final_regression"
+        "concept": "Run baseline and final regression separately with readable PowerShell commands.",
+        "text": "New-Item -ItemType Directory -Force results, reports\n\njmeter -n `\n    -t plans/baseline.jmx `\n    -l results/baseline.jtl `\n    -e `\n    -o reports/baseline\n\njmeter -n `\n    -t plans/final_regression.jmx `\n    -l results/final_regression.jtl `\n    -e `\n    -o reports/final_regression"
       },
       {
         "id": "JM4-06",
@@ -450,8 +450,8 @@ window.TESTING_DRILLS = {
       },
       {
         "id": "PM2-06",
-        "concept": "Run collections in Newman with an environment and explicit reports.",
-        "text": "newman run ServiceDesk.postman_collection.json   -e Competition.postman_environment.json   --reporters cli,json   --reporter-json-export reports/newman-results.json"
+        "concept": "Run Newman with environment data and a machine-readable report using readable PowerShell continuation.",
+        "text": "newman run ServiceDesk.postman_collection.json `\n    -e Competition.postman_environment.json `\n    --reporters cli,json `\n    --reporter-json-export reports/newman-results.json"
       }
     ],
     "3": [
@@ -482,8 +482,8 @@ window.TESTING_DRILLS = {
       },
       {
         "id": "PM3-06",
-        "concept": "Use Newman CLI options that make failures visible to CI.",
-        "text": "newman run ServiceDesk.postman_collection.json   -e Competition.postman_environment.json   --bail failure   --reporters cli,junit   --reporter-junit-export reports/newman-junit.xml"
+        "concept": "Fail a CI-style Newman run on test failure and export JUnit output in readable PowerShell.",
+        "text": "newman run ServiceDesk.postman_collection.json `\n    -e Competition.postman_environment.json `\n    --bail failure `\n    --reporters cli,junit `\n    --reporter-junit-export reports/newman-junit.xml"
       }
     ],
     "4": [
@@ -514,8 +514,8 @@ window.TESTING_DRILLS = {
       },
       {
         "id": "PM4-06",
-        "concept": "Run a repeatable Newman regression with data, environment, and machine-readable reports.",
-        "text": "newman run ServiceDesk.postman_collection.json   -e Competition.postman_environment.json   -d testdata/regression_users.csv   --iteration-count 1   --bail failure   --reporters cli,json,junit   --reporter-json-export reports/newman-results.json   --reporter-junit-export reports/newman-junit.xml"
+        "concept": "Run a repeatable Newman regression with data, environment, and machine-readable reports in PowerShell.",
+        "text": "newman run ServiceDesk.postman_collection.json `\n    -e Competition.postman_environment.json `\n    -d testdata/regression_users.csv `\n    --iteration-count 1 `\n    --bail failure `\n    --reporters cli,json,junit `\n    --reporter-json-export reports/newman-results.json `\n    --reporter-junit-export reports/newman-junit.xml"
       }
     ]
   },
@@ -580,8 +580,8 @@ window.TESTING_DRILLS = {
       },
       {
         "id": "MIX2-06",
-        "concept": "Practice a reproducible Newman command.",
-        "text": "newman run API.postman_collection.json   -e QA.postman_environment.json   --reporters cli,junit   --reporter-junit-export reports/api.xml"
+        "concept": "Practice a reproducible Newman run with readable PowerShell continuation.",
+        "text": "newman run API.postman_collection.json `\n    -e QA.postman_environment.json `\n    --reporters cli,junit `\n    --reporter-junit-export reports/api.xml"
       }
     ],
     "3": [
@@ -612,8 +612,8 @@ window.TESTING_DRILLS = {
       },
       {
         "id": "MIX3-06",
-        "concept": "Practice a parameterized JMeter run that can be repeated exactly.",
-        "text": "jmeter -n   -t plans/load_test.jmx   -Jusers=25   -Jramp=60   -Jduration=180   -l results/load_25_users.jtl"
+        "concept": "Practice a parameterized JMeter run that can be repeated exactly from PowerShell.",
+        "text": "jmeter -n `\n    -t plans/load_test.jmx `\n    -Jusers=25 `\n    -Jramp=60 `\n    -Jduration=180 `\n    -l results/load_25_users.jtl"
       }
     ],
     "4": [
@@ -625,12 +625,12 @@ window.TESTING_DRILLS = {
       {
         "id": "MIX4-02",
         "concept": "Practice a Page Object workflow with stable locators and explicit waits.",
-        "text": "class TicketDetailsPage:\n    ASSIGN_BUTTON = (By.CSS_SELECTOR, \"[data-testid='assign-ticket']\")\n    OWNER_SELECT = (By.ID, \"owner\")\n    SAVE_BUTTON = (By.CSS_SELECTOR, \"[data-testid='save-assignment']\")\n    OWNER_VALUE = (By.CSS_SELECTOR, \"[data-testid='ticket-owner']\")\n\n    def assign_to(self, owner_name):\n        self.wait.until(EC.element_to_be_clickable(self.ASSIGN_BUTTON)).click()\n        Select(self.driver.find_element(*self.OWNER_SELECT)).select_by_visible_text(owner_name)\n        self.driver.find_element(*self.SAVE_BUTTON).click()\n        self.wait.until(\n            EC.text_to_be_present_in_element(self.OWNER_VALUE, owner_name)\n        )"
+        "text": "class TicketDetailsPage:\n    ASSIGN_BUTTON = (By.CSS_SELECTOR, \"[data-testid='assign-ticket']\")\n    OWNER_SELECT = (By.ID, \"owner\")\n    SAVE_BUTTON = (By.CSS_SELECTOR, \"[data-testid='save-assignment']\")\n    OWNER_VALUE = (By.CSS_SELECTOR, \"[data-testid='ticket-owner']\")\n\n    def assign_to(self, owner_name):\n        assign_button = self.wait.until(\n            EC.element_to_be_clickable(self.ASSIGN_BUTTON)\n        )\n        assign_button.click()\n\n        owner_select = Select(\n            self.driver.find_element(*self.OWNER_SELECT)\n        )\n        owner_select.select_by_visible_text(owner_name)\n\n        self.driver.find_element(*self.SAVE_BUTTON).click()\n        self.wait.until(\n            EC.text_to_be_present_in_element(\n                self.OWNER_VALUE,\n                owner_name,\n            )\n        )"
       },
       {
         "id": "MIX4-03",
         "concept": "Practice a defensive JMeter assertion for expected and unexpected outcomes.",
-        "text": "def code = prev.getResponseCode()\ndef body = prev.getResponseDataAsString()\n\ndef expected = vars.get(\"expectedStatus\") ?: \"200\"\n\nif (code != expected) {\n    AssertionResult.setFailure(true)\n    AssertionResult.setFailureMessage(\n        \"Expected HTTP ${expected}, received ${code}; sampler=${prev.getSampleLabel()}; body=${body.take(300)}\"\n    )\n}"
+        "text": "def code = prev.getResponseCode()\ndef body = prev.getResponseDataAsString()\ndef expected = vars.get(\"expectedStatus\") ?: \"200\"\n\nif (code != expected) {\n    AssertionResult.setFailure(true)\n\n    def sampler = prev.getSampleLabel()\n    def detail = body.take(300)\n    def message = \"Expected HTTP ${expected}, received ${code}; \" +\n        \"sampler=${sampler}; body=${detail}\"\n\n    AssertionResult.setFailureMessage(message)\n}"
       },
       {
         "id": "MIX4-04",
@@ -639,8 +639,8 @@ window.TESTING_DRILLS = {
       },
       {
         "id": "MIX4-05",
-        "concept": "Practice a clean regression execution sequence across tools.",
-        "text": "python -m pytest tests/api -q\npython -m pytest tests/ui -q\n\nnewman run API.postman_collection.json   -e QA.postman_environment.json   --bail failure\n\njmeter -n   -t plans/final_regression.jmx   -l results/final_regression.jtl   -e -o reports/final_regression"
+        "concept": "Practice a clean regression execution sequence with readable commands across tools.",
+        "text": "python -m pytest tests/api -q\npython -m pytest tests/ui -q\n\nnewman run API.postman_collection.json `\n    -e QA.postman_environment.json `\n    --bail failure\n\njmeter -n `\n    -t plans/final_regression.jmx `\n    -l results/final_regression.jtl `\n    -e `\n    -o reports/final_regression"
       },
       {
         "id": "MIX4-06",
@@ -705,8 +705,8 @@ window.TESTING_DRILLS = {
       },
       {
         "id": "RH2-05",
-        "concept": "Practice a symbol-heavy Newman command used for API regression.",
-        "text": "newman run API.postman_collection.json   -e QA.postman_environment.json   --reporters cli,json   --reporter-json-export reports/result.json"
+        "concept": "Practice a symbol-heavy Newman command with readable PowerShell continuation.",
+        "text": "newman run API.postman_collection.json `\n    -e QA.postman_environment.json `\n    --reporters cli,json `\n    --reporter-json-export reports/result.json"
       },
       {
         "id": "RH2-06",
@@ -769,13 +769,13 @@ window.TESTING_DRILLS = {
       },
       {
         "id": "RH4-05",
-        "concept": "Long symbol practice using a reproducible Newman regression command.",
-        "text": "newman run ServiceDesk.postman_collection.json   -e Competition.postman_environment.json   -d testdata/users.csv   --bail failure   --reporters cli,json,junit   --reporter-json-export reports/results.json   --reporter-junit-export reports/results.xml"
+        "concept": "Long symbol practice using a readable and reproducible Newman PowerShell command.",
+        "text": "newman run ServiceDesk.postman_collection.json `\n    -e Competition.postman_environment.json `\n    -d testdata/users.csv `\n    --bail failure `\n    --reporters cli,json,junit `\n    --reporter-json-export reports/results.json `\n    --reporter-junit-export reports/results.xml"
       },
       {
         "id": "RH4-06",
-        "concept": "Long symbol practice using a parameterized JMeter final run.",
-        "text": "jmeter -n   -t plans/final_regression.jmx   -Jusers=40   -Jramp=60   -Jduration=180   -JbaseUrl=http://localhost:8080   -l results/final_regression.jtl   -e   -o reports/final_regression"
+        "concept": "Long symbol practice using a readable parameterized JMeter PowerShell command.",
+        "text": "jmeter -n `\n    -t plans/final_regression.jmx `\n    -Jusers=40 `\n    -Jramp=60 `\n    -Jduration=180 `\n    -JbaseUrl=http://localhost:8080 `\n    -l results/final_regression.jtl `\n    -e `\n    -o reports/final_regression"
       }
     ]
   }

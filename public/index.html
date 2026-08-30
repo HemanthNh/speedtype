@@ -94,7 +94,7 @@
     <button id="startBtn">Start Practice</button>
   </section>
 
-  <section class="card practice">
+  <section class="card practice" id="practiceCard">
     <div class="metrics">
       <div><span>Time</span><strong id="time">10:00</strong></div>
       <div><span>WPM</span><strong id="wpm">0</strong></div>
@@ -110,10 +110,16 @@
         <div class="prompt-label">Code practice workspace</div>
         <div class="editor-help">Use <kbd>Tab</kbd> for indentation and <kbd>Shift</kbd> + <kbd>Tab</kbd> to unindent. Tab uses a 4-space coding tab stop.</div>
       </div>
-      <div class="editor-badges">
-        <span>Monospace</span>
-        <span>No line wrap</span>
-        <span>Spaces: 4</span>
+      <div class="editor-controls">
+        <div class="editor-badges">
+          <span>Monospace</span>
+          <span>No soft wrap</span>
+          <span>Spaces: 4</span>
+        </div>
+        <div class="editor-buttons">
+          <button id="layoutBtn" type="button" class="secondary small">Stack editors</button>
+          <button id="focusEditorBtn" type="button" class="secondary small">Focus editor</button>
+        </div>
       </div>
     </div>
 
@@ -135,6 +141,7 @@
         <div class="editor-statusbar">
           <span>REFERENCE</span>
           <span id="referencePosition">1 line</span>
+          <span id="longLineStatus">Line width OK</span>
         </div>
       </section>
 
