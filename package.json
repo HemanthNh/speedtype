@@ -1,15 +1,20 @@
 {
   "name": "aswin-typing-monitor",
-  "version": "6.2.0",
+  "version": "6.4.0",
   "private": true,
-  "description": "Testing-focused typing monitor with minimal visual analytics, ranked color-coded mistake analysis, viewport-fit code editors, progression, Telegram coaching reports and resilient local persistence",
+  "description": "Testing-focused typing coach with PostgreSQL persistence, Monkeytype-style ghost editor, teaching-first exercise bank, visual analytics, progression and Telegram coaching reports",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "check": "node --check server.js && node --check public/exercise-bank.js && node --check public/core.js && node --check public/app.js",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "migrate:json": "node scripts/migrate-json-to-postgres.js",
+    "db:check": "node scripts/check-database.js"
   },
   "engines": {
     "node": ">=18 <25"
+  },
+  "dependencies": {
+    "pg": "^8.0.0"
   }
 }

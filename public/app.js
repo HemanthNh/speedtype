@@ -22,6 +22,8 @@ let sessionCompletedExerciseIds = [];
 let finishing = false;
 let cachedServerSessions = [];
 let transientTestEditorLayout = null;
+let persistentServerStorage = false;
+let serverStorageMode = "server";
 
 const $ = id => document.getElementById(id);
 const mode = $("mode");
@@ -52,6 +54,9 @@ const practiceCard = $("practiceCard");
 const layoutBtn = $("layoutBtn");
 const focusEditorBtn = $("focusEditorBtn");
 const testModeBanner = $("testModeBanner");
+const typingOverlay = $("typingOverlay");
+const learningLesson = $("learningLesson");
+const learningAvoid = $("learningAvoid");
 
 let progressState = loadProgressState();
 
@@ -1099,6 +1104,79 @@ function editorFileName(modeName, exercise = activeExercise) {
   return modeName === "Right-Hand QA Focus" ? "qa_focus.txt" : "qa_workflow.txt";
 }
 
+
+function renderLearningGuide(exercise, blockNumber = 0) {
+  if (!exercise) {
+    $("learningFocus").textContent = "Choose a testing domain and level. Read the concept before typing.";
+    if (learningLesson) learningLesson.textContent = "The exercise will explain why the pattern matters in real automation work.";
+    if (learningAvoid) learningAvoid.textContent = "You will also see the anti-pattern to avoid.";
+    return;
+  }
+  $("learningFocus").textContent = `Block ${blockNumber || 1} | ${exercise.id} | ${exercise.concept}`;
+  if (learningLesson) {
+    learningLesson.textContent = exercise.lesson || `Why it matters: ${exercise.concept}`;
+  }
+  if (learningAvoid) {
+    learningAvoid.textContent = exercise.avoid || "Notice the structure while typing, then explain why this pattern makes the test easier to maintain or diagnose.";
+  }
+}
+
+function renderGhostEditor() {
+  if (!typingOverlay) return;
+  const target = String(promptEl.textContent || "");
+  const typed = String(box.value || "");
+  if (!active && !target) {
+    typingOverlay.textContent = "Press Start Practice to begin.";
+    return;
+  }
+  const chunks = [];
+  let currentClass = null;
+  let currentText = "";
+  const flush = () => {
+    if (!currentText) return;
+    chunks.push(`<span class="${currentClass}">${escapeHtml(currentText)}</span>`);
+    currentText = "";
+  };
+  const maxLength = Math.max(target.length, typed.length);
+  for (let index = 0; index < maxLength; index += 1) {
+    let cls = "ghost-pending";
+    let char = target[index] ?? "";
+    if (index < typed.length) {
+      if (index < target.length && typed[index] === target[index]) {
+        cls = "ghost-correct";
+        char = target[index];
+      } else {
+        cls = "ghost-error";
+        char = typed[index] ?? "";
+      }
+    }
+    if (cls !== currentClass) {
+      flush();
+      currentClass = cls;
+    }
+    currentText += char;
+  }
+  flush();
+  typingOverlay.innerHTML = chunks.join("") || '<span class="ghost-pending">Start typing...</span>';
+  typingOverlay.scrollTop = Number(box.scrollTop || 0);
+  typingOverlay.scrollLeft = Number(box.scrollLeft || 0);
+}
+
+function nextAvailableExercise(modeName, levelNumber, revision = false) {
+  const requested = Number(levelNumber || 1);
+  let exercise = chooseDrill({ mode: modeName, level: requested, revision });
+  if (exercise || revision) return { exercise, level: requested };
+
+  const order = [];
+  for (let current = requested + 1; current <= 4; current += 1) order.push(current);
+  for (let current = 1; current < requested; current += 1) order.push(current);
+  for (const candidateLevel of order) {
+    exercise = chooseDrill({ mode: modeName, level: candidateLevel, revision: false });
+    if (exercise) return { exercise, level: candidateLevel };
+  }
+  return { exercise: null, level: requested };
+}
+
 function renderLineNumbers(element, count, activeLine = 0) {
   if (!element) return;
   const safeCount = Math.max(1, Number(count || 1));
@@ -1125,6 +1203,7 @@ function updateEditorChrome() {
     longLineStatus.className = maxLineLength > 100 ? "warn" : "";
   }
   if (caretStatus) caretStatus.textContent = `Ln ${caret.line}, Col ${caret.column}`;
+  renderGhostEditor();
 }
 
 function syncReferenceGutter() {
@@ -1133,6 +1212,10 @@ function syncReferenceGutter() {
 
 function syncTypingGutter() {
   if (typingLineNumbers) typingLineNumbers.style.transform = `translateY(-${Number(box.scrollTop || 0)}px)`;
+  if (typingOverlay) {
+    typingOverlay.scrollTop = Number(box.scrollTop || 0);
+    typingOverlay.scrollLeft = Number(box.scrollLeft || 0);
+  }
 }
 
 function updateEditorMatch(stats) {
@@ -1333,6 +1416,8 @@ function extendPromptIfComplete() {
   if (!next && !revisionMode.checked && !active?.testMode) {
     activeExercise = null;
     $("learningFocus").textContent = `All remaining exercises in ${mode.value}, Level ${level.value} are complete for this session.`;
+    if (learningLesson) learningLesson.textContent = "This level is complete. Review the recap or continue to the next level.";
+    if (learningAvoid) learningAvoid.textContent = "Do not repeat mastered drills unless you intentionally enable Revision Mode.";
     finishSession("level_complete");
     return;
   }
@@ -1340,7 +1425,7 @@ function extendPromptIfComplete() {
   activeExercise = next;
   exerciseBlockNumber++;
   promptEl.textContent += `\n\n${activeExercise.text}`;
-  $("learningFocus").textContent = `Block ${exerciseBlockNumber} | ${activeExercise.id} | ${activeExercise.concept}`;
+  renderLearningGuide(activeExercise, exerciseBlockNumber);
   updateEditorChrome();
   if (!active?.testMode) markExerciseInProgress(activeExercise);
   showRandomTip();
@@ -1352,6 +1437,11 @@ async function refreshConfig() {
     targetAccuracy = Number(config.accuracyGate || 97);
     $("ruleBox").textContent = `Pass condition: ${targetAccuracy}% accuracy or higher and at least one complete code block. Paste is blocked. Speed does not compensate for poor accuracy.`;
     $("notifyStatus").textContent = config.notificationConfigured ? "Telegram configured" : "Telegram not configured";
+    persistentServerStorage = Boolean(config.persistentStorage);
+    serverStorageMode = config.storageMode || "server";
+    if (!isTestModeEnabled() && !pendingSyncCount()) {
+      $("syncStatus").textContent = persistentServerStorage ? "PostgreSQL + browser progress ready" : "Local development storage, not persistent";
+    }
   } catch {
     $("notifyStatus").textContent = "Server unavailable, local progress still works";
   }
@@ -1382,7 +1472,7 @@ async function fetchServerSessions() {
   try {
     const rows = await fetchJson("/api/sessions", {}, 5000);
     cachedServerSessions = Array.isArray(rows) ? rows : [];
-    $("syncStatus").textContent = pendingSyncCount() ? `${pendingSyncCount()} session(s) pending server sync` : "Local + server history synced";
+    $("syncStatus").textContent = pendingSyncCount() ? `${pendingSyncCount()} session(s) pending server sync` : (persistentServerStorage ? "PostgreSQL + browser history synced" : "Local + development history synced");
     return cachedServerSessions;
   } catch {
     cachedServerSessions = [];
@@ -1409,7 +1499,7 @@ async function rehydrateMissingServerSessions(serverRows) {
     }, 7000);
     if (Array.isArray(data.sessions)) {
       cachedServerSessions = data.sessions;
-      $("syncStatus").textContent = data.imported ? `Restored ${data.imported} local session(s) to server history` : "Local + server history synced";
+      $("syncStatus").textContent = data.imported ? `Restored ${data.imported} local session(s) to ${persistentServerStorage ? "PostgreSQL" : "server history"}` : (persistentServerStorage ? "PostgreSQL + browser history synced" : "Local + development history synced");
       return cachedServerSessions;
     }
   } catch {}
@@ -1506,14 +1596,30 @@ async function startSession() {
   const preferredExerciseId = startBtn.dataset.preferredExerciseId || "";
   const preferred = preferredExerciseId ? getDrillById(preferredExerciseId) : null;
   const testRun = isTestModeEnabled();
-  let exercise = preferred && preferred.mode === mode.value && preferred.level === Number(level.value) && (testRun || revisionMode.checked || !isMastered(preferred.id)) ? preferred : chooseDrill({ revision: testRun || revisionMode.checked });
+  let exercise = preferred && preferred.mode === mode.value && preferred.level === Number(level.value) && (testRun || revisionMode.checked || !isMastered(preferred.id)) ? preferred : null;
+  let resolvedLevel = Number(level.value);
+  if (!exercise) {
+    const resolved = nextAvailableExercise(
+      mode.value,
+      Number(level.value),
+      testRun || revisionMode.checked
+    );
+    exercise = resolved.exercise;
+    resolvedLevel = resolved.level;
+  }
   startBtn.dataset.preferredExerciseId = "";
 
   if (!exercise) {
-    $("ruleBox").textContent = `Level ${level.value} is already complete. Choose another level or enable Revision Mode to practise mastered exercises.`;
+    $("ruleBox").textContent = `${mode.value} is complete. Enable Revision Mode to revisit mastered exercises.`;
     $("ruleBox").className = "rule good";
     renderNextUp();
     return;
+  }
+  if (resolvedLevel !== Number(level.value)) {
+    level.value = String(resolvedLevel);
+    if (!testRun) progressState.settings.level = resolvedLevel;
+    $("ruleBox").textContent = `Level ${resolvedLevel} selected automatically because the previous level is complete.`;
+    $("ruleBox").className = "rule good";
   }
 
   activeExercise = exercise;
@@ -1521,7 +1627,7 @@ async function startSession() {
   completedExerciseBlocks = 0;
   sessionCompletedExerciseIds = [];
   promptEl.textContent = activeExercise.text;
-  $("learningFocus").textContent = `Block ${exerciseBlockNumber} | ${activeExercise.id} | ${activeExercise.concept}`;
+  renderLearningGuide(activeExercise, exerciseBlockNumber);
   $("sessionRecap").classList.add("hidden");
   showRandomTip();
   box.value = "";
@@ -1789,7 +1895,7 @@ function reset() {
   setSetupDisabled(false);
   finishing = false;
   promptEl.textContent = "Press Start Practice to begin.";
-  $("learningFocus").textContent = "Choose a testing domain and level. Each exercise includes a best-practice learning focus.";
+  renderLearningGuide(null);
   updateEditorChrome();
   updateEditorMatch();
   syncReferenceGutter();

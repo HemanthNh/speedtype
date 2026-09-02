@@ -107,58 +107,53 @@
 
     <div class="rule" id="ruleBox">Pass condition: 97% accuracy or higher and at least one full code block.</div>
 
-    <div class="code-practice-head">
+    <div class="code-practice-head single-editor-head">
       <div>
-        <div class="prompt-label">Code practice workspace</div>
-        <div class="editor-help">Use <kbd>Tab</kbd> for indentation and <kbd>Shift</kbd> + <kbd>Tab</kbd> to unindent. Tab uses a 4-space coding tab stop.</div>
+        <div class="prompt-label">Code practice</div>
+        <div class="editor-help">Type directly over the ghost code. Use <kbd>Tab</kbd> for a 4-space coding tab stop and <kbd>Shift</kbd> + <kbd>Tab</kbd> to unindent.</div>
       </div>
       <div class="editor-controls">
         <div class="editor-badges">
-          <span>Monospace</span>
-          <span>No soft wrap</span>
+          <span>Ghost reference</span>
+          <span>Exact typing</span>
           <span>Spaces: 4</span>
         </div>
         <div class="editor-buttons">
-          <button id="layoutBtn" type="button" class="secondary small">Stack editors</button>
+          <button id="layoutBtn" type="button" class="secondary small hidden" tabindex="-1">Layout: Auto</button>
           <button id="focusEditorBtn" type="button" class="secondary small">Focus editor</button>
         </div>
       </div>
     </div>
 
-    <div class="learning-focus" id="learningFocus">Choose a testing domain and level. Each exercise includes a best-practice learning focus.</div>
+    <div class="learning-guide">
+      <div class="learning-focus" id="learningFocus">Choose a testing domain and level. Read the concept before typing.</div>
+      <div class="learning-lesson" id="learningLesson">The exercise will explain why the pattern matters in real automation work.</div>
+      <div class="learning-avoid" id="learningAvoid">You will also see the anti-pattern to avoid.</div>
+    </div>
 
-    <div class="code-workspace">
-      <section class="code-editor reference-editor" aria-label="Reference code">
+    <!-- Hidden source elements keep target text separate from user input. -->
+    <pre id="prompt" class="hidden">Press Start Practice to begin.</pre>
+    <div id="referenceLineNumbers" class="hidden">1</div>
+    <span id="referenceMeta" class="hidden">Reference</span>
+    <span id="referencePosition" class="hidden">1 line</span>
+    <span id="longLineStatus" class="hidden">Line width OK</span>
+
+    <div class="code-workspace single-workspace">
+      <section class="code-editor typing-editor monkey-editor" aria-label="Typing code editor">
         <div class="editor-titlebar">
           <div class="editor-title-left">
             <span class="editor-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-            <strong id="referenceFile">reference.txt</strong>
-          </div>
-          <span id="referenceMeta">Reference</span>
-        </div>
-        <div class="editor-body">
-          <div class="line-number-gutter" aria-hidden="true"><div id="referenceLineNumbers" class="line-numbers">1</div></div>
-          <pre class="prompt" id="prompt" tabindex="0">Press Start Practice to begin.</pre>
-        </div>
-        <div class="editor-statusbar">
-          <span>REFERENCE</span>
-          <span id="referencePosition">1 line</span>
-          <span id="longLineStatus">Line width OK</span>
-        </div>
-      </section>
-
-      <section class="code-editor typing-editor" aria-label="Typing code editor">
-        <div class="editor-titlebar">
-          <div class="editor-title-left">
-            <span class="editor-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-            <strong>your_code</strong>
+            <strong id="referenceFile">practice.py</strong>
           </div>
           <span id="editorMatchStatus">Ready</span>
         </div>
-        <div class="editor-body">
+        <div class="editor-body monkey-editor-body">
           <div class="line-number-gutter" aria-hidden="true"><div id="typingLineNumbers" class="line-numbers">1</div></div>
-          <textarea id="typingBox" disabled spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"
-            aria-label="Type the reference code exactly" placeholder="Type the reference code here..."></textarea>
+          <div class="monkey-input-wrap">
+            <pre id="typingOverlay" class="typing-overlay" aria-hidden="true">Press Start Practice to begin.</pre>
+            <textarea id="typingBox" disabled spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"
+              aria-label="Type over the ghost reference code" placeholder="Start typing here..."></textarea>
+          </div>
         </div>
         <div class="editor-statusbar">
           <span id="caretStatus">Ln 1, Col 1</span>

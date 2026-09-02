@@ -206,18 +206,22 @@ test('browser workflow masters a block, updates dropdown progress, and survives 
   assert.equal(second.serverSessions.length, 1, 'local history should rehydrate an empty server session file');
 });
 
-test('completed levels are excluded from normal practice but available in Revision Mode', async () => {
+test('completed levels auto-advance, while Revision Mode can revisit them', async () => {
   const app = makeAppContext(new Map());
   await settle();
   const ids = vm.runInContext('allDrillsFor("Python Automation", 1).map(d => d.id)', app.context);
   vm.runInContext(`for (const id of ${JSON.stringify(ids)}) { const d=getDrillById(id); progressState.exercises[id]={id,mode:d.mode,level:d.level,concept:d.concept,status:"mastered",attempts:1,bestScore:100,bestAccuracy:100,bestWpm:40,history:[]}; } saveProgressState(); renderProgressUI();`, app.context);
   assert.match(app.elements.get('level').options[0].textContent, /COMPLETE/);
   await vm.runInContext('startSession()', app.context);
-  assert.equal(vm.runInContext('active', app.context), null);
-  assert.match(app.elements.get('ruleBox').textContent, /already complete/);
+  assert.equal(vm.runInContext('Boolean(active)', app.context), true);
+  assert.equal(vm.runInContext('active.level', app.context), 2);
+  vm.runInContext('reset()', app.context);
+
+  app.elements.get('level').value = '1';
   vm.runInContext('revisionMode.checked = true', app.context);
   await vm.runInContext('startSession()', app.context);
   assert.equal(vm.runInContext('Boolean(active)', app.context), true);
+  assert.equal(vm.runInContext('active.level', app.context), 1);
   vm.runInContext('reset()', app.context);
 });
 
@@ -265,25 +269,12 @@ test('Tab stays inside the typing editor and inserts coding indentation', async 
 });
 
 
-test('editor layout preference cycles and focus mode can be entered and exited', async () => {
+test('single editor focus mode can be entered and exited', async () => {
   const app = makeAppContext(new Map());
   await settle();
   const practice = app.elements.get('practiceCard');
-  const layout = app.elements.get('layoutBtn');
-  assert.equal(layout.textContent, 'Layout: Auto');
-
-  layout.click();
-  assert.equal(layout.textContent, 'Layout: Stacked');
-  assert.equal(practice.classList.contains('layout-stacked'), true);
-
-  layout.click();
-  assert.equal(layout.textContent, 'Layout: Side by side');
-  assert.equal(practice.classList.contains('layout-side'), true);
-
-  layout.click();
-  assert.equal(layout.textContent, 'Layout: Auto');
-  assert.equal(practice.classList.contains('layout-stacked'), false);
-  assert.equal(practice.classList.contains('layout-side'), false);
+  assert.ok(practice);
+  assert.ok(app.elements.get('layoutBtn'));
 
   app.elements.get('focusEditorBtn').click();
   assert.equal(app.context.document.body.classList.contains('editor-focus-active'), true);
@@ -291,39 +282,21 @@ test('editor layout preference cycles and focus mode can be entered and exited',
   assert.equal(app.context.document.body.classList.contains('editor-focus-active'), false);
 });
 
-
-test('reference and typing editors scroll independently', async () => {
+test('single editor keeps ghost text and line numbers aligned while scrolling', async () => {
   const app = makeAppContext(new Map());
   await settle();
   await vm.runInContext('startSession()', app.context);
 
   const box = app.elements.get('typingBox');
-  const reference = app.elements.get('prompt');
-  reference.scrollTop = 140;
-  reference.scrollLeft = 32;
-  box.scrollTop = 0;
-  box.scrollLeft = 0;
-
-  box.value = 'x';
-  box.selectionStart = 1;
-  box.selectionEnd = 1;
-  box.dispatchEvent({ type: 'input' });
-
-  assert.equal(reference.scrollTop, 140, 'typing must preserve reference vertical scroll');
-  assert.equal(reference.scrollLeft, 32, 'typing must preserve reference horizontal scroll');
-
+  const overlay = app.elements.get('typingOverlay');
+  const lineNumbers = app.elements.get('typingLineNumbers');
   box.scrollTop = 88;
   box.scrollLeft = 16;
   box.dispatchEvent({ type: 'scroll' });
-  assert.equal(reference.scrollTop, 140, 'typing-pane scrolling must not change reference vertical scroll');
-  assert.equal(reference.scrollLeft, 32, 'typing-pane scrolling must not change reference horizontal scroll');
 
-  reference.scrollTop = 210;
-  reference.scrollLeft = 44;
-  reference.dispatchEvent({ type: 'scroll' });
-  assert.equal(box.scrollTop, 88, 'reference scrolling must not change typing vertical scroll');
-  assert.equal(box.scrollLeft, 16, 'reference scrolling must not change typing horizontal scroll');
-
+  assert.equal(overlay.scrollTop, 88);
+  assert.equal(overlay.scrollLeft, 16);
+  assert.match(String(lineNumbers.style.transform), /-88px/);
   vm.runInContext('reset()', app.context);
 });
 
@@ -392,4 +365,48 @@ test('Test Mode can exercise an already-completed level without changing its mas
   assert.equal(vm.runInContext('Boolean(active && active.testMode)', app.context), true);
   vm.runInContext('reset()', app.context);
   assert.equal(shared.get('aswinTypingProgressV3'), before);
+});
+
+
+test('Selenium mode starts directly and falls forward to the next unfinished level', async () => {
+  const app = makeAppContext(new Map());
+  await settle();
+  vm.runInContext('mode.value="Selenium"; refreshLevelOptions(); level.value="1";', app.context);
+  await vm.runInContext('startSession()', app.context);
+  assert.equal(vm.runInContext('Boolean(active)', app.context), true);
+  assert.match(vm.runInContext('activeExercise.id', app.context), /^SEL1-/);
+  vm.runInContext('reset()', app.context);
+
+  const ids = vm.runInContext('allDrillsFor("Selenium", 1).map(d => d.id)', app.context);
+  vm.runInContext(`for (const id of ${JSON.stringify(ids)}) { const d=getDrillById(id); progressState.exercises[id]={id,mode:d.mode,level:d.level,concept:d.concept,status:"mastered",attempts:1,bestScore:100,bestAccuracy:100,bestWpm:40,history:[]}; } saveProgressState(); mode.value="Selenium"; refreshLevelOptions(); level.value="1";`, app.context);
+  await vm.runInContext('startSession()', app.context);
+  assert.equal(vm.runInContext('Boolean(active)', app.context), true);
+  assert.equal(vm.runInContext('active.level', app.context), 2);
+  assert.match(vm.runInContext('activeExercise.id', app.context), /^SEL2-/);
+  vm.runInContext('reset()', app.context);
+});
+
+test('single ghost editor keeps target visible and colors typed progress', async () => {
+  const app = makeAppContext(new Map());
+  await settle();
+  await vm.runInContext('startSession()', app.context);
+  const target = vm.runInContext('promptEl.textContent', app.context);
+  const box = app.elements.get('typingBox');
+  const overlay = app.elements.get('typingOverlay');
+  assert.ok(target.length > 20);
+  assert.match(overlay.innerHTML, /ghost-pending/);
+
+  box.value = target.slice(0, 8);
+  box.selectionStart = box.value.length;
+  box.selectionEnd = box.value.length;
+  box.dispatchEvent({ type: 'input' });
+  assert.match(overlay.innerHTML, /ghost-correct/);
+  assert.match(overlay.innerHTML, /ghost-pending/);
+
+  box.value = 'X' + target.slice(1, 8);
+  box.selectionStart = box.value.length;
+  box.selectionEnd = box.value.length;
+  box.dispatchEvent({ type: 'input' });
+  assert.match(overlay.innerHTML, /ghost-error/);
+  vm.runInContext('reset()', app.context);
 });

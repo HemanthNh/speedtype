@@ -49,18 +49,22 @@ test('code practice surface includes editor affordances and non-wrapping input',
   assert.match(html, /id="typingBox"[^>]*wrap="off"/s);
   assert.match(app, /addEventListener\("keydown", applyEditorTab\)/);
   assert.match(app, /core\.applyTabEdit/);
+  assert.match(html, /id="typingOverlay"/);
+  assert.match(html, /class="code-workspace single-workspace"/);
+  assert.equal(/class="code-editor reference-editor"/.test(html), false);
+  assert.match(css, /\.ghost-pending/);
+  assert.match(css, /\.ghost-correct/);
+  assert.match(css, /\.ghost-error/);
 });
 
 
-test('responsive editor includes wide, stacked and focus layouts', () => {
-  assert.match(html, /id="practiceCard"/);
-  assert.match(html, /id="layoutBtn"/);
+test('single editor supports a wide workspace and focus mode', () => {
+  assert.match(html, /class="code-workspace single-workspace"/);
+  assert.match(html, /id="typingOverlay"/);
   assert.match(html, /id="focusEditorBtn"/);
-  assert.match(html, /id="longLineStatus"/);
-  assert.match(css, /width:\s*min\(1700px/);
-  assert.match(css, /@media \(max-width: 1540px\)/);
+  assert.match(css, /\.single-workspace/);
+  assert.match(css, /\.monkey-editor-body/);
   assert.match(css, /editor-focus-active/);
-  assert.match(app, /cycleEditorLayout/);
   assert.match(app, /toggleEditorFocus/);
 });
 
@@ -79,12 +83,11 @@ test('app updates preserve the established browser progress storage namespace', 
 });
 
 
-test('viewport-fit editor keeps both panes on one row for common laptop widths', () => {
-  assert.match(css, /@media \(min-width: 1080px\)[\s\S]*?\.practice:not\(\.layout-stacked\) \.code-workspace\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 1fr\)/);
-  assert.match(css, /height:\s*clamp\(280px, calc\(100vh - 430px\), 430px\)/);
-  assert.match(css, /@media \(min-width: 1080px\) and \(max-height: 820px\)/);
-  assert.match(css, /@media \(max-width: 1079px\)/);
-  assert.match(css, /body\.editor-focus-active \.practice:not\(\.layout-stacked\) \.code-workspace/);
+test('single editor height adapts to laptop and mobile viewports', () => {
+  assert.match(css, /height:\s*clamp\(330px, calc\(100vh - 430px\), 560px\)/);
+  assert.match(css, /body\.editor-focus-active \.monkey-editor-body/);
+  assert.match(css, /@media \(max-width: 720px\)/);
+  assert.match(css, /height:\s*clamp\(300px, 52vh, 480px\)/);
 });
 
 test('Test Mode is visibly available and isolated in the client', () => {
@@ -106,3 +109,20 @@ test('main dashboard exposes ranked and color-coded mistake analysis', () => {
   assert.match(css, /\.mistake-bar-fill\.severity-critical/);
   assert.match(css, /\.mistake-insight-grid/);
 });
+
+test('PostgreSQL persistence is configured for hosted deployments', () => {
+  const storage = fs.readFileSync(path.join(__dirname, '../storage.js'), 'utf8');
+  const schema = fs.readFileSync(path.join(__dirname, '../database/schema.sql'), 'utf8');
+  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
+  const envExample = fs.readFileSync(path.join(__dirname, '../.env.example'), 'utf8');
+  assert.equal(pkg.dependencies.pg.startsWith('^8.'), true);
+  assert.match(storage, /process\.env\.DATABASE_URL/);
+  assert.match(storage, /CREATE TABLE IF NOT EXISTS typing_sessions/);
+  assert.match(schema, /data JSONB NOT NULL/);
+  assert.match(envExample, /DATABASE_URL=/);
+  assert.match(serverForDatabaseTest(), /persistentStorage/);
+});
+
+function serverForDatabaseTest() {
+  return fs.readFileSync(path.join(__dirname, '../server.js'), 'utf8');
+}

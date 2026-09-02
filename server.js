@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { URL } = require("url");
+const { createSessionStore } = require("./storage");
 
 const PORT = Number(process.env.PORT) || 8080;
 const HOST = process.env.HOST || "0.0.0.0";
@@ -10,29 +11,7 @@ const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : pat
 const DATA_FILE = process.env.DATA_FILE ? path.resolve(process.env.DATA_FILE) : path.join(DATA_DIR, "sessions.json");
 const PUBLIC_DIR = path.join(__dirname, "public");
 const REPORT_TIME_ZONE = process.env.REPORT_TIME_ZONE || "Asia/Kolkata";
-
-fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, "[]", "utf8");
-
-function readSessions() {
-  try {
-    const parsed = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeSessions(sessions) {
-  const temp = `${DATA_FILE}.tmp`;
-  fs.writeFileSync(temp, JSON.stringify(sessions, null, 2), "utf8");
-  try {
-    fs.renameSync(temp, DATA_FILE);
-  } catch {
-    fs.copyFileSync(temp, DATA_FILE);
-    fs.unlinkSync(temp);
-  }
-}
+const sessionStore = createSessionStore({ databaseUrl: process.env.DATABASE_URL || "", dataFile: DATA_FILE });
 
 function sendJson(res, status, obj) {
   res.writeHead(status, {
@@ -364,20 +343,34 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === "GET" && url.pathname === "/api/config") {
     const { token, chatId } = getTelegramConfig();
-    return sendJson(res, 200, {
+    const storage = await sessionStore.health();
+    return sendJson(res, storage.ok ? 200 : 503, {
       notificationConfigured: Boolean(token && chatId),
       trainee: "Aswin",
       accuracyGate: 97,
-      dailyTargetMinutes: 20
+      dailyTargetMinutes: 20,
+      storageMode: storage.mode,
+      persistentStorage: storage.persistent,
+      databaseConfigured: sessionStore.mode === "postgres",
+      storageHealthy: storage.ok,
+      storageError: storage.ok ? null : storage.error
     });
   }
 
   if (req.method === "GET" && url.pathname === "/api/sessions") {
-    return sendJson(res, 200, readSessions().slice().sort((a, b) => new Date(b.startedAt || 0) - new Date(a.startedAt || 0)));
+    try {
+      return sendJson(res, 200, await sessionStore.listSessions());
+    } catch (error) {
+      return sendJson(res, 503, { error: "Session database unavailable", detail: error.message });
+    }
   }
 
   if (req.method === "GET" && url.pathname === "/api/summary") {
-    return sendJson(res, 200, buildSummary(readSessions()));
+    try {
+      return sendJson(res, 200, buildSummary(await sessionStore.listSessions()));
+    } catch (error) {
+      return sendJson(res, 503, { error: "Session database unavailable", detail: error.message });
+    }
   }
 
   if (req.method === "POST" && url.pathname === "/api/test-notification") {
@@ -390,21 +383,17 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = await bodyJson(req);
       const incoming = Array.isArray(body.sessions) ? body.sessions.slice(0, 300) : [];
-      const sessions = readSessions();
-      let imported = 0;
+      const normalized = [];
       for (const item of incoming) {
         if (!item?.id || !item.completedAt || item.testMode === true) continue;
-        const existing = sessions.find(s => s.id === String(item.id));
-        if (existing) continue;
         const session = sanitizeSessionStart(item);
         applyCompletion(session, item, item.completionStatus === "INTERRUPTED" ? "INTERRUPTED" : null);
-        sessions.push(session);
-        imported++;
+        normalized.push(session);
       }
-      if (imported) writeSessions(sessions);
-      return sendJson(res, 200, { imported, sessions: sessions.slice().sort((a, b) => new Date(b.startedAt || 0) - new Date(a.startedAt || 0)) });
+      const imported = await sessionStore.importSessions(normalized);
+      return sendJson(res, 200, { imported, sessions: await sessionStore.listSessions() });
     } catch (error) {
-      return sendJson(res, 400, { error: error.message || "Invalid request" });
+      return sendJson(res, 503, { error: "Session database unavailable", detail: error.message || "Invalid request" });
     }
   }
 
@@ -414,18 +403,15 @@ const server = http.createServer(async (req, res) => {
       if (body.testMode === true) {
         return sendJson(res, 200, { testMode: true, discarded: true, notification: { ok: false, reason: "Test Mode is never persisted or sent" } });
       }
-      const sessions = readSessions();
       const id = String(body.id || crypto.randomUUID());
-      const existing = sessions.find(s => s.id === id);
-      if (existing) return sendJson(res, 200, { session: existing, notification: { ok: false, reason: "Session already exists" } });
-
       const session = sanitizeSessionStart({ ...body, id });
-      sessions.push(session);
-      writeSessions(sessions);
-      const notification = await notifyTelegram(startMessage(session));
-      return sendJson(res, 201, { session, notification });
+      const created = await sessionStore.createSession(session);
+      if (!created.created) return sendJson(res, 200, { session: created.session, notification: { ok: false, reason: "Session already exists" } });
+
+      const notification = await notifyTelegram(startMessage(created.session));
+      return sendJson(res, 201, { session: created.session, notification });
     } catch (error) {
-      return sendJson(res, 400, { error: error.message || "Invalid request" });
+      return sendJson(res, 503, { error: "Session database unavailable", detail: error.message || "Invalid request" });
     }
   }
 
@@ -437,12 +423,8 @@ const server = http.createServer(async (req, res) => {
       }
       if (!body.id) return sendJson(res, 400, { error: "Session id is required" });
 
-      const sessions = readSessions();
-      let session = sessions.find(s => s.id === String(body.id));
-      if (!session) {
-        session = sanitizeSessionStart(body);
-        sessions.push(session);
-      }
+      let session = await sessionStore.getSession(String(body.id));
+      if (!session) session = sanitizeSessionStart(body);
 
       const incomingCompletedAt = body.completedAt ? new Date(body.completedAt).getTime() : 0;
       const existingCompletedAt = session.completedAt ? new Date(session.completedAt).getTime() : 0;
@@ -451,13 +433,13 @@ const server = http.createServer(async (req, res) => {
       }
 
       applyCompletion(session, body, url.pathname.endsWith("interrupt") ? "INTERRUPTED" : null);
-      writeSessions(sessions);
+      session = await sessionStore.upsertSession(session);
       const notification = await notifyTelegram(completionMessage(session));
       const milestoneText = milestoneMessage(session);
       const milestoneNotification = milestoneText ? await notifyTelegram(milestoneText) : { ok: false, reason: "No new milestone" };
       return sendJson(res, 200, { session, notification, milestoneNotification });
     } catch (error) {
-      return sendJson(res, 400, { error: error.message || "Invalid request" });
+      return sendJson(res, 503, { error: "Session database unavailable", detail: error.message || "Invalid request" });
     }
   }
 
@@ -466,8 +448,16 @@ const server = http.createServer(async (req, res) => {
 });
 
 if (require.main === module) {
-  server.listen(PORT, HOST, () => {
-    console.log(`Typing Monitor v5.9 running at http://localhost:${PORT}`);
+  sessionStore.init().then(() => {
+    server.listen(PORT, HOST, () => {
+      console.log(`Typing Monitor v6.4 running at http://localhost:${PORT} (${sessionStore.mode} storage)`);
+      if (sessionStore.mode !== "postgres") {
+        console.warn("DATABASE_URL is not set. Local JSON fallback is for development/testing only and is not persistent on Render.");
+      }
+    });
+  }).catch(error => {
+    console.error("Failed to initialize session storage:", error.message);
+    process.exit(1);
   });
 }
 

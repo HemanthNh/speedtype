@@ -343,3 +343,91 @@ Use the **Test mode** toggle when validating the app on another laptop or browse
 ## v6.2 editor scroll behavior
 
 Reference Code and Your Code now scroll independently. Scrolling one editor never moves the other. Each editor still keeps its own line-number gutter aligned with its own scroll position.
+
+
+## v6.4 Teaching-first single editor
+
+- Replaces the two-pane reference/typing workspace with one Monkeytype-style ghost-code editor.
+- Correct characters brighten, mistakes are highlighted, and untyped target code remains visible in place.
+- Tab and Shift+Tab continue to provide 4-space code indentation.
+- Selenium start logic now automatically advances from a completed selected level to the next unfinished level.
+- Rebuilt all 24 Selenium drills around configuration, explicit waits, stable locators, fixtures, Page Objects, component objects, test-data factories, cleanup, semantic state and focused end-to-end flows.
+- Added visible Why it matters and Avoid guidance to every exercise in the 144-exercise bank.
+- Removed embedded localhost endpoints, sample passwords and trainee-specific credentials from the exercise bank.
+- PostgreSQL persistence, Test Mode, Telegram reports, analytics, progress and existing browser storage remain unchanged.
+
+## v6.3 PostgreSQL persistence
+
+The hosted app now uses PostgreSQL whenever `DATABASE_URL` is configured. The database is the server-side source of truth for session history, so Render restarts and redeployments no longer erase server history.
+
+### Required Render environment variable
+
+```text
+DATABASE_URL=<your PostgreSQL connection string>
+```
+
+Optional database settings:
+
+```text
+DATABASE_SSL=true
+DATABASE_SSL_REJECT_UNAUTHORIZED=false
+DATABASE_POOL_MAX=5
+```
+
+Telegram variables remain unchanged:
+
+```text
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+REPORT_TIME_ZONE=Asia/Kolkata
+```
+
+### Storage behavior
+
+- PostgreSQL stores complete session records permanently on the server side.
+- Browser `localStorage` remains as a resilience/cache layer for progression and recent session recovery.
+- Existing browser session history is automatically uploaded through `/api/sessions/sync` when it is missing from the new database.
+- `data/sessions.json` is retained only as a local-development fallback when `DATABASE_URL` is not set.
+- Do not rely on `data/sessions.json` on Render.
+
+### Database schema
+
+The app automatically creates the `typing_sessions` table and indexes at startup. The same schema is available in `database/schema.sql` for review or manual setup.
+
+### Import an existing sessions.json manually
+
+After setting `DATABASE_URL` locally:
+
+```text
+npm run migrate:json
+```
+
+Or specify another JSON history file:
+
+```text
+node scripts/migrate-json-to-postgres.js /path/to/sessions.json
+```
+
+The import is idempotent because session IDs are primary keys. Re-running it does not create duplicates.
+
+### Check the database connection
+
+```text
+npm run db:check
+```
+
+### Render deployment
+
+Build command:
+
+```text
+npm install
+```
+
+Start command:
+
+```text
+npm start
+```
+
+Before deploying the database version, add `DATABASE_URL` under the Render service environment variables. `/api/config` reports `storageMode`, `persistentStorage`, `databaseConfigured`, and `storageHealthy` so persistence can be verified after deployment.
