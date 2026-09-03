@@ -73,3 +73,12 @@ test('line and column status is one-based for editor display', () => {
   assert.deepEqual(core.lineColumn('abc\ndef', 4), { line: 2, column: 1 });
   assert.deepEqual(core.lineColumn('abc\ndef', 7), { line: 2, column: 4 });
 });
+
+test('speed bonus is locked until the configured accuracy gate is met', () => {
+  const target = 'a'.repeat(100);
+  const typed = 'b'.repeat(4) + 'a'.repeat(96);
+  const stats = core.calculateTypingStats(target, typed, 60000, 97, 0);
+  assert.equal(stats.accuracy, 96);
+  assert.equal(stats.liveScore, Math.round(stats.accuracy * 0.70));
+  assert.equal(stats.passedAccuracyGate, false);
+});

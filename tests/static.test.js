@@ -126,3 +126,17 @@ test('PostgreSQL persistence is configured for hosted deployments', () => {
 function serverForDatabaseTest() {
   return fs.readFileSync(path.join(__dirname, '../server.js'), 'utf8');
 }
+
+test('speed quest is visible next to the editor and targets 45 to 50 WPM', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../public/index.html'), 'utf8');
+  const css = fs.readFileSync(path.join(__dirname, '../public/style.css'), 'utf8');
+  const app = fs.readFileSync(path.join(__dirname, '../public/app.js'), 'utf8');
+  assert.match(html, /id="currentSpeedWpm"/);
+  assert.match(html, /id="overallSpeedWpm"/);
+  assert.match(html, /Reach 45 to 50 WPM/);
+  assert.match(html, /id="speedTargetFill"/);
+  assert.match(css, /zone-competition/);
+  assert.match(css, /zone-elite/);
+  assert.match(app, /overallSpeedStats/);
+  assert.match(app, /accuracy-lock/);
+});

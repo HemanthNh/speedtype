@@ -345,6 +345,21 @@ Use the **Test mode** toggle when validating the app on another laptop or browse
 Reference Code and Your Code now scroll independently. Scrolling one editor never moves the other. Each editor still keeps its own line-number gutter aligned with its own scroll position.
 
 
+
+## v6.5 Speed Quest
+
+The code workspace now shows a gamified speed HUD directly above the editor:
+
+- **Current WPM** is the live pace for the active session.
+- **Overall WPM** is the duration-weighted average across completed sessions that meet the configured accuracy gate.
+- Personal best and consecutive **45+ WPM** valid-session streak are shown beside it.
+- A 30 / 35 / 40 / 45 / 50 WPM target track gives immediate visual feedback.
+- Speed zones are color coded: Building, Solid, Strong, Competition (45+), and Elite (50+).
+- If accuracy falls below the mastery gate, speed rank and speed bonus are locked. The raw WPM remains visible so the learner can see pace without being rewarded for inaccurate typing.
+- New achievements include **Competition 45** and **Elite 50**.
+
+The established browser progress key remains `aswinTypingProgressV3`, so this UI update does not intentionally reset existing browser progress.
+
 ## v6.4 Teaching-first single editor
 
 - Replaces the two-pane reference/typing workspace with one Monkeytype-style ghost-code editor.

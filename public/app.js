@@ -57,6 +57,19 @@ const testModeBanner = $("testModeBanner");
 const typingOverlay = $("typingOverlay");
 const learningLesson = $("learningLesson");
 const learningAvoid = $("learningAvoid");
+const currentSpeedCard = $("currentSpeedCard");
+const currentSpeedWpm = $("currentSpeedWpm");
+const currentSpeedZone = $("currentSpeedZone");
+const currentSpeedDial = $("currentSpeedDial");
+const currentSpeedDialValue = $("currentSpeedDialValue");
+const overallSpeedCard = $("overallSpeedCard");
+const overallSpeedWpm = $("overallSpeedWpm");
+const overallSpeedZone = $("overallSpeedZone");
+const speedPersonalBest = $("speedPersonalBest");
+const speedStreak = $("speedStreak");
+const speedTargetFill = $("speedTargetFill");
+const speedRank = $("speedRank");
+const speedGoalText = $("speedGoalText");
 
 let progressState = loadProgressState();
 
@@ -1322,6 +1335,100 @@ function updateDailyChallenge() {
     : `Complete one Level 3 or 4 testing drill at 98%+ accuracy, then explain the best practice used in the code.`;
 }
 
+function speedZoneFor(wpm, accuracy = targetAccuracy) {
+  const value = Math.max(0, Number(wpm || 0));
+  const accuracyValue = Number(accuracy == null ? targetAccuracy : accuracy);
+  if (accuracyValue < targetAccuracy) return { key: "accuracy-lock", label: `Accuracy first · ${targetAccuracy}%+`, rank: "Locked" };
+  if (value >= 50) return { key: "elite", label: "Elite pace", rank: "50+ Elite" };
+  if (value >= 45) return { key: "competition", label: "Competition pace", rank: "45+ Ready" };
+  if (value >= 40) return { key: "strong", label: "Strong pace", rank: "40+ Strong" };
+  if (value >= 35) return { key: "solid", label: "Solid pace", rank: "35+ Solid" };
+  if (value >= 25) return { key: "developing", label: "Building speed", rank: "25+ Building" };
+  return { key: "building", label: value ? "Build rhythm" : "Start typing", rank: "Accuracy first" };
+}
+
+function validSpeedSessions() {
+  return mergeSessions()
+    .filter(session => session.completedAt
+      && session.completionStatus !== "INTERRUPTED"
+      && Number(session.exerciseBlocksCompleted || 0) > 0
+      && Number(session.accuracy || 0) >= Number(session.targetAccuracy || targetAccuracy)
+      && Number(session.wpm || 0) > 0)
+    .sort((a, b) => new Date(a.startedAt) - new Date(b.startedAt));
+}
+
+function overallSpeedStats() {
+  const sessions = validSpeedSessions();
+  if (!sessions.length) return { average: 0, best: 0, streak45: 0, count: 0 };
+
+  const weightedSessions = sessions.filter(session => Number(session.durationSeconds || 0) > 0);
+  const totalSeconds = weightedSessions.reduce((sum, session) => sum + Number(session.durationSeconds || 0), 0);
+  const totalCharacters = weightedSessions.reduce((sum, session) => {
+    const seconds = Number(session.durationSeconds || 0);
+    const actual = Math.max(0, Number(session.charactersTyped || 0));
+    const estimated = Math.max(0, Number(session.wpm || 0)) * 5 * (seconds / 60);
+    return sum + (actual || estimated);
+  }, 0);
+  const weighted = totalSeconds > 0 && totalCharacters > 0
+    ? Math.round((totalCharacters / 5) / (totalSeconds / 60))
+    : Math.round(sessions.reduce((sum, session) => sum + Number(session.wpm || 0), 0) / sessions.length);
+  const best = Math.max(...sessions.map(session => Number(session.wpm || 0)));
+  let streak45 = 0;
+  for (let index = sessions.length - 1; index >= 0; index -= 1) {
+    if (Number(sessions[index].wpm || 0) >= 45) streak45 += 1;
+    else break;
+  }
+  return { average: weighted, best, streak45, count: sessions.length };
+}
+
+function renderSpeedArena(currentStats = null) {
+  const currentWpm = Math.max(0, Number(currentStats?.wpm || 0));
+  const currentAccuracy = Number(currentStats?.accuracy == null ? 100 : currentStats.accuracy);
+  const sampleReady = !currentStats || (Number(currentStats.elapsedMs || 0) >= 5000 && Number(currentStats.charactersTyped || 0) >= 20);
+  const currentZone = currentStats && !sampleReady
+    ? { key: "building", label: "Calibrating pace", rank: "Warming up" }
+    : speedZoneFor(currentWpm, currentAccuracy);
+  const overall = overallSpeedStats();
+  const overallZone = speedZoneFor(overall.average, targetAccuracy);
+
+  if (currentSpeedWpm) currentSpeedWpm.textContent = Math.round(currentWpm);
+  if (currentSpeedDialValue) currentSpeedDialValue.textContent = Math.round(currentWpm);
+  if (currentSpeedZone) currentSpeedZone.textContent = currentZone.label;
+  if (currentSpeedCard) currentSpeedCard.className = `speed-card speed-current zone-${currentZone.key}`;
+  if (currentSpeedDial) {
+    const dialProgress = Math.min(100, (currentWpm / 50) * 100);
+    if (typeof currentSpeedDial.style?.setProperty === "function") currentSpeedDial.style.setProperty("--speed-dial-progress", `${dialProgress}%`);
+    else currentSpeedDial.style["--speed-dial-progress"] = `${dialProgress}%`;
+  }
+
+  if (overallSpeedWpm) overallSpeedWpm.textContent = overall.average;
+  if (overallSpeedZone) overallSpeedZone.textContent = overall.count ? `${overallZone.label} · ${overall.count} valid session${overall.count === 1 ? "" : "s"}` : "No valid sessions yet";
+  if (speedPersonalBest) speedPersonalBest.textContent = overall.best;
+  if (speedStreak) speedStreak.textContent = overall.streak45;
+  if (overallSpeedCard) overallSpeedCard.className = `speed-card speed-overall zone-${overall.count ? overallZone.key : "idle"}`;
+
+  const progress = Math.min(100, (currentWpm / 50) * 100);
+  if (speedTargetFill) {
+    speedTargetFill.style.width = `${progress}%`;
+    speedTargetFill.className = `speed-track-fill zone-${currentZone.key}`;
+  }
+  if (speedRank) speedRank.textContent = currentZone.rank;
+
+  if (speedGoalText) {
+    if (currentStats && !sampleReady) {
+      speedGoalText.textContent = "Keep typing. Speed rank activates after 5 seconds and 20 characters.";
+    } else if (currentAccuracy < targetAccuracy) {
+      speedGoalText.textContent = `Speed rank locked at ${currentAccuracy.toFixed(1)}% accuracy. Reach ${targetAccuracy}%+ first.`;
+    } else if (currentWpm >= 50) {
+      speedGoalText.textContent = "Elite 50+ WPM pace unlocked. Keep accuracy stable.";
+    } else if (currentWpm >= 45) {
+      speedGoalText.textContent = `${Math.max(0, 50 - Math.round(currentWpm))} WPM to the 50 WPM stretch target.`;
+    } else {
+      speedGoalText.textContent = `${Math.max(0, 45 - Math.round(currentWpm))} WPM to competition-ready 45 WPM.`;
+    }
+  }
+}
+
 function compute() {
   const target = promptEl.textContent;
   const typed = box.value;
@@ -1333,6 +1440,7 @@ function compute() {
   accEl.textContent = `${stats.accuracy.toFixed(1)}%`;
   errEl.textContent = stats.errors;
   liveScoreEl.textContent = stats.liveScore;
+  renderSpeedArena({ ...stats, elapsedMs, charactersTyped: typed.length });
   accEl.className = stats.accuracy >= targetAccuracy ? "good" : (stats.accuracy >= 95 ? "warn" : "bad");
 
   const regular = [["letters", b.letters], ["numbers", b.numbers], ["punctuation", b.punctuation], ["spaces", b.spaces], ["case", b.case]]
@@ -1464,6 +1572,8 @@ function computeAchievements(completed) {
   })) earned.add("Right Hand Recovery");
   if (completed.some(s => s.passed && Number(s.level) === 4)) earned.add("Advanced Technical Clean Run");
   if (completed.some(s => Number(s.wpm) >= 40 && Number(s.accuracy) >= Number(s.targetAccuracy || targetAccuracy))) earned.add("40 Club");
+  if (completed.some(s => Number(s.wpm) >= 45 && Number(s.accuracy) >= Number(s.targetAccuracy || targetAccuracy))) earned.add("Competition 45");
+  if (completed.some(s => Number(s.wpm) >= 50 && Number(s.accuracy) >= Number(s.targetAccuracy || targetAccuracy))) earned.add("Elite 50");
   if (completed.some(s => Number(s.mistakeBreakdown?.pasteAttempts || 0) === 0)) earned.add("Zero Paste");
   return [...earned];
 }
@@ -1528,6 +1638,7 @@ async function syncPendingSessions() {
 
 function renderSummaryFromSessions() {
   const rows = mergeSessions();
+  renderSpeedArena(null);
   const summary = core.sessionSummary(rows, targetAccuracy);
   $("todayMinutes").textContent = `${summary.todayMinutes} min`;
   $("dailyTargetText").textContent = `Target ${TARGET_DAILY_MINUTES} min, ${Math.min(100, Math.round(summary.todayMinutes / TARGET_DAILY_MINUTES * 100))}% done`;
@@ -1631,6 +1742,7 @@ async function startSession() {
   $("sessionRecap").classList.add("hidden");
   showRandomTip();
   box.value = "";
+  renderSpeedArena(null);
   box.selectionStart = 0;
   box.selectionEnd = 0;
   box.scrollTop = 0;
@@ -1901,6 +2013,7 @@ function reset() {
   syncReferenceGutter();
   syncTypingGutter();
   wpmEl.textContent = "0";
+  renderSpeedArena(null);
   accEl.textContent = "100%";
   accEl.className = "";
   errEl.textContent = "0";

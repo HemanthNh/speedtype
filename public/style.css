@@ -1333,3 +1333,233 @@ body.editor-focus-active .monkey-editor-body {
     font-size: 13px;
   }
 }
+
+/* v6.5 speed quest gamification */
+.compact-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.speed-arena {
+  display: grid;
+  grid-template-columns: minmax(200px, .85fr) minmax(220px, 1fr) minmax(360px, 1.8fr);
+  gap: 12px;
+  margin: 12px 0 14px;
+}
+.speed-card,
+.speed-quest {
+  --zone-color: #64748b;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #dfe6ef;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 14px;
+  min-width: 0;
+  transition: border-color .2s ease, background-color .2s ease, transform .2s ease;
+}
+.speed-current {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-color: color-mix(in srgb, var(--zone-color) 40%, #dfe6ef);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--zone-color) 7%, #ffffff), #ffffff 70%);
+}
+.speed-card-copy,
+.speed-overall {
+  min-width: 0;
+}
+.speed-kicker {
+  display: block;
+  color: #66758a;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.speed-card > strong,
+.speed-card-copy > strong {
+  display: block;
+  margin-top: 4px;
+  color: #172033;
+  font-size: 30px;
+  line-height: 1;
+}
+.speed-card strong small {
+  color: #6b7789;
+  font-size: 12px;
+  font-weight: 800;
+}
+.speed-zone {
+  display: block;
+  margin-top: 7px;
+  color: var(--zone-color);
+  font-size: 11px;
+  font-weight: 850;
+}
+.speed-dial {
+  --speed-dial-progress: 0%;
+  flex: 0 0 74px;
+  width: 74px;
+  height: 74px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(var(--zone-color) var(--speed-dial-progress), #e8edf4 0);
+  position: relative;
+}
+.speed-dial::after {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+.speed-dial > div {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+.speed-dial strong,
+.speed-dial small {
+  display: block;
+}
+.speed-dial strong {
+  font-size: 20px;
+  line-height: 1;
+}
+.speed-dial small {
+  margin-top: 2px;
+  color: #758196;
+  font-size: 9px;
+  font-weight: 800;
+}
+.speed-mini-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 10px;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 750;
+}
+.speed-mini-stats strong {
+  color: #1f2937;
+  font-size: 12px;
+}
+.speed-quest {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 14px 18px 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+}
+.speed-quest-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+.speed-quest-head strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 16px;
+}
+.speed-rank {
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #eef2f7;
+  color: #475569;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.speed-track {
+  position: relative;
+  height: 13px;
+  margin: 23px 6px 22px;
+  border-radius: 999px;
+  background: #e8edf4;
+}
+.speed-track-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  border-radius: inherit;
+  background: var(--zone-color, #64748b);
+  transition: width .28s ease, background-color .2s ease;
+}
+.speed-marker {
+  position: absolute;
+  top: 50%;
+  width: 2px;
+  height: 19px;
+  transform: translate(-50%, -50%);
+  background: #b6c0cf;
+}
+.speed-marker b {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #718096;
+  font-size: 9px;
+  font-style: normal;
+}
+.speed-marker.m30 { left: 60%; }
+.speed-marker.m35 { left: 70%; }
+.speed-marker.m40 { left: 80%; }
+.speed-marker.m45 { left: 90%; background: #1f9d73; }
+.speed-marker.m50 { left: 100%; background: #6d4bd1; }
+.speed-goal-text {
+  color: #59677b;
+  font-size: 11px;
+  font-weight: 750;
+}
+.zone-idle { --zone-color: #64748b; }
+.zone-building { --zone-color: #b45309; }
+.zone-developing { --zone-color: #d97706; }
+.zone-solid { --zone-color: #2563eb; }
+.zone-strong { --zone-color: #0f766e; }
+.zone-competition { --zone-color: #15803d; }
+.zone-elite { --zone-color: #6d4bd1; }
+.zone-accuracy-lock { --zone-color: #b42318; }
+.speed-track-fill.zone-building { background: #b45309; }
+.speed-track-fill.zone-developing { background: #d97706; }
+.speed-track-fill.zone-solid { background: #2563eb; }
+.speed-track-fill.zone-strong { background: #0f766e; }
+.speed-track-fill.zone-competition { background: #15803d; }
+.speed-track-fill.zone-elite { background: linear-gradient(90deg, #15803d, #6d4bd1); }
+.speed-track-fill.zone-accuracy-lock { background: repeating-linear-gradient(135deg, #b42318 0 7px, #e9a6a0 7px 14px); }
+.speed-card.zone-competition,
+.speed-card.zone-elite {
+  border-width: 2px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .speed-card.zone-competition .speed-dial,
+  .speed-card.zone-elite .speed-dial {
+    animation: speedPulse 1.7s ease-in-out infinite alternate;
+  }
+  @keyframes speedPulse {
+    from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--zone-color) 0%, transparent); }
+    to { box-shadow: 0 0 0 5px color-mix(in srgb, var(--zone-color) 12%, transparent); }
+  }
+}
+@media (max-width: 1050px) {
+  .speed-arena {
+    grid-template-columns: 1fr 1fr;
+  }
+  .speed-quest {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 680px) {
+  .compact-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+  .speed-arena {
+    grid-template-columns: 1fr;
+  }
+  .speed-quest {
+    grid-column: auto;
+  }
+}

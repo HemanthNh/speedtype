@@ -450,7 +450,7 @@ const server = http.createServer(async (req, res) => {
 if (require.main === module) {
   sessionStore.init().then(() => {
     server.listen(PORT, HOST, () => {
-      console.log(`Typing Monitor v6.4 running at http://localhost:${PORT} (${sessionStore.mode} storage)`);
+      console.log(`Typing Monitor v6.5 running at http://localhost:${PORT} (${sessionStore.mode} storage)`);
       if (sessionStore.mode !== "postgres") {
         console.warn("DATABASE_URL is not set. Local JSON fallback is for development/testing only and is not persistent on Render.");
       }

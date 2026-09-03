@@ -410,3 +410,42 @@ test('single ghost editor keeps target visible and colors typed progress', async
   assert.match(overlay.innerHTML, /ghost-error/);
   vm.runInContext('reset()', app.context);
 });
+
+test('speed quest shows current pace, weighted overall pace, personal best and accuracy lock', async () => {
+  const app = makeAppContext(new Map());
+  await settle();
+
+  vm.runInContext(`
+    progressState.localSessions = [
+      {
+        id: 'speed-1', startedAt: '2026-09-01T10:00:00.000Z', completedAt: '2026-09-01T10:01:00.000Z',
+        completionStatus: 'PASS', exerciseBlocksCompleted: 1, accuracy: 98, targetAccuracy: 97,
+        wpm: 40, durationSeconds: 60, charactersTyped: 200
+      },
+      {
+        id: 'speed-2', startedAt: '2026-09-02T10:00:00.000Z', completedAt: '2026-09-02T10:01:00.000Z',
+        completionStatus: 'PASS', exerciseBlocksCompleted: 1, accuracy: 99, targetAccuracy: 97,
+        wpm: 50, durationSeconds: 60, charactersTyped: 250
+      },
+      {
+        id: 'speed-invalid', startedAt: '2026-09-03T10:00:00.000Z', completedAt: '2026-09-03T10:01:00.000Z',
+        completionStatus: 'REPEAT', exerciseBlocksCompleted: 1, accuracy: 94, targetAccuracy: 97,
+        wpm: 70, durationSeconds: 60, charactersTyped: 350
+      }
+    ];
+    renderSummaryFromSessions();
+  `, app.context);
+
+  assert.equal(String(app.elements.get('overallSpeedWpm').textContent), '45');
+  assert.equal(String(app.elements.get('speedPersonalBest').textContent), '50');
+  assert.equal(String(app.elements.get('speedStreak').textContent), '1');
+
+  vm.runInContext('renderSpeedArena({wpm:47, accuracy:98, elapsedMs:10000, charactersTyped:40});', app.context);
+  assert.equal(String(app.elements.get('currentSpeedWpm').textContent), '47');
+  assert.match(String(app.elements.get('speedRank').textContent), /45\+ Ready/);
+  assert.equal(app.elements.get('speedTargetFill').style.width, '94%');
+
+  vm.runInContext('renderSpeedArena({wpm:52, accuracy:94, elapsedMs:10000, charactersTyped:40});', app.context);
+  assert.match(String(app.elements.get('speedRank').textContent), /Locked/);
+  assert.match(app.elements.get('currentSpeedCard').className, /zone-accuracy-lock/);
+});

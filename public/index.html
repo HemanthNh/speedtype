@@ -97,12 +97,12 @@
 
   <section class="card practice" id="practiceCard">
     <div id="testModeBanner" class="test-mode-banner hidden">TEST MODE · Results will not be saved, synced, counted, or sent to Telegram.</div>
-    <div class="metrics">
+    <div class="metrics compact-metrics">
       <div><span>Time</span><strong id="time">10:00</strong></div>
-      <div><span>WPM</span><strong id="wpm">0</strong></div>
       <div><span>Accuracy</span><strong id="accuracy">100%</strong></div>
       <div><span>Errors</span><strong id="errors">0</strong></div>
       <div><span>Score</span><strong id="liveScore">70</strong></div>
+      <strong id="wpm" class="hidden" aria-hidden="true">0</strong>
     </div>
 
     <div class="rule" id="ruleBox">Pass condition: 97% accuracy or higher and at least one full code block.</div>
@@ -130,6 +130,48 @@
       <div class="learning-lesson" id="learningLesson">The exercise will explain why the pattern matters in real automation work.</div>
       <div class="learning-avoid" id="learningAvoid">You will also see the anti-pattern to avoid.</div>
     </div>
+
+    <section class="speed-arena" id="speedArena" aria-label="Typing speed challenge">
+      <div class="speed-card speed-current zone-idle" id="currentSpeedCard">
+        <div class="speed-card-copy">
+          <span class="speed-kicker">Current speed</span>
+          <strong><span id="currentSpeedWpm">0</span><small> WPM</small></strong>
+          <span class="speed-zone" id="currentSpeedZone">Start typing</span>
+        </div>
+        <div class="speed-dial" id="currentSpeedDial" aria-hidden="true">
+          <div><strong id="currentSpeedDialValue">0</strong><small>/ 50</small></div>
+        </div>
+      </div>
+
+      <div class="speed-card speed-overall" id="overallSpeedCard">
+        <span class="speed-kicker">Overall speed</span>
+        <strong><span id="overallSpeedWpm">0</span><small> WPM</small></strong>
+        <span class="speed-zone" id="overallSpeedZone">No valid sessions yet</span>
+        <div class="speed-mini-stats">
+          <span>Best <strong id="speedPersonalBest">0</strong></span>
+          <span>45+ streak <strong id="speedStreak">0</strong></span>
+        </div>
+      </div>
+
+      <div class="speed-quest">
+        <div class="speed-quest-head">
+          <div>
+            <span class="speed-kicker">Speed quest</span>
+            <strong>Reach 45 to 50 WPM</strong>
+          </div>
+          <span class="speed-rank" id="speedRank">Accuracy first</span>
+        </div>
+        <div class="speed-track" aria-hidden="true">
+          <span class="speed-track-fill" id="speedTargetFill"></span>
+          <i class="speed-marker m30"><b>30</b></i>
+          <i class="speed-marker m35"><b>35</b></i>
+          <i class="speed-marker m40"><b>40</b></i>
+          <i class="speed-marker m45"><b>45</b></i>
+          <i class="speed-marker m50"><b>50</b></i>
+        </div>
+        <div class="speed-goal-text" id="speedGoalText">Maintain 97%+ accuracy to unlock speed ranks.</div>
+      </div>
+    </section>
 
     <!-- Hidden source elements keep target text separate from user input. -->
     <pre id="prompt" class="hidden">Press Start Practice to begin.</pre>

@@ -78,7 +78,7 @@
     const minutes = Math.max(Number(elapsedMs || 0) / 60000, 1 / 60);
     const wpm = Math.round((typed.length / 5) / minutes);
     const accuracyPoints = Math.min(70, accuracy * 0.70);
-    const speedPoints = accuracy >= 95 ? Math.min(30, wpm * 0.60) : 0;
+    const speedPoints = accuracy >= Number(targetAccuracy || 97) ? Math.min(30, wpm * 0.60) : 0;
     const liveScore = Math.round(accuracyPoints + speedPoints);
 
     return {

@@ -1,8 +1,8 @@
 {
   "name": "aswin-typing-monitor",
-  "version": "6.4.0",
+  "version": "6.5.0",
   "private": true,
-  "description": "Testing-focused typing coach with PostgreSQL persistence, Monkeytype-style ghost editor, teaching-first exercise bank, visual analytics, progression and Telegram coaching reports",
+  "description": "Testing-focused typing coach with PostgreSQL persistence, Monkeytype-style ghost editor, teaching-first exercise bank, visual analytics, speed quest gamification, progression and Telegram coaching reports",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
